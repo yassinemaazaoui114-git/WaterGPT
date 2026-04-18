@@ -37,6 +37,8 @@ export default function ParcellesPage() {
   const [consoError, setConsoError] = useState("")
   const [consoLoading, setConsoLoading] = useState(false)
   const [tokenResult, setTokenResult] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
+  const [errorMsg, setErrorMsg] = useState("")
 
   const activeNav = "quotas"
   const navItems = [
@@ -180,6 +182,25 @@ export default function ParcellesPage() {
       setAddError(detail || "Erreur lors de l'ajout. Vérifiez les données.")
     } finally {
       setAddLoading(false)
+    }
+  }
+
+  const handleDelete = async (parcelleId) => {
+    try {
+      await API.delete(`/parcelles/${parcelleId}`)
+      setDeletingId(null)
+      setParcelles(prev => prev.filter(p => p.id !== parcelleId))
+      setParcelleQuotas(prev => {
+        const updated = { ...prev }
+        delete updated[parcelleId]
+        return updated
+      })
+      setSuccessMsg("Parcelle supprimée ✅")
+      setTimeout(() => setSuccessMsg(""), 3000)
+    } catch {
+      setDeletingId(null)
+      setErrorMsg("Erreur lors de la suppression")
+      setTimeout(() => setErrorMsg(""), 3000)
     }
   }
 
@@ -390,6 +411,13 @@ export default function ParcellesPage() {
                     }`}>
                       {parcelle.actif ? "Actif" : "Inactif"}
                     </span>
+                    <button
+                      onClick={() => setDeletingId(parcelle.id)}
+                      className="p-1.5 rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all"
+                      title="Supprimer"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
                   </div>
 
                   <div className="flex items-center gap-2 text-slate-700">
@@ -632,10 +660,44 @@ export default function ParcellesPage() {
         </div>
       )}
 
+      {/* DELETE CONFIRM MODAL */}
+      {deletingId && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-xl">
+            <div className="text-center mb-6">
+              <span className="text-4xl">🗑️</span>
+              <h3 className="text-lg font-bold mt-3 text-gray-800">Supprimer cette parcelle ?</h3>
+              <p className="text-sm text-gray-500 mt-2">
+                Cette action désactivera la parcelle. Vos données de consommation seront conservées.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeletingId(null)}
+                className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(deletingId)}
+                className="flex-1 py-3 rounded-full bg-red-500 text-white font-semibold hover:bg-red-600 transition-all"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SUCCESS TOAST */}
       {successMsg && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-2xl shadow-xl text-sm font-bold animate-pulse">
           {successMsg}
+        </div>
+      )}
+      {errorMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-2xl shadow-xl text-sm font-bold">
+          {errorMsg}
         </div>
       )}
 
