@@ -28,6 +28,9 @@ export default function ParcellesPage() {
   const [addError, setAddError] = useState("")
   const [addLoading, setAddLoading] = useState(false)
 
+  const [quotaPreview, setQuotaPreview] = useState(null)
+  const [parcelleQuotas, setParcelleQuotas] = useState({})
+
   const [showConsoForm, setShowConsoForm] = useState(false)
   const [selectedParcelle, setSelectedParcelle] = useState(null)
   const [consoForm, setConsoForm] = useState({ date: new Date().toISOString().split("T")[0], litres_consommes: "", saison: getSaisonFromMonth() })
@@ -62,11 +65,20 @@ export default function ParcellesPage() {
           API.get("/parcelles"),
           API.get("/plantes"),
         ])
-        setParcelles(parcellesRes.data)
+        const parcellesData = parcellesRes.data
+        setParcelles(parcellesData)
         setPlantes(plantesRes.data)
         if (plantesRes.data.length > 0) {
           setAddForm((f) => ({ ...f, type_plante_id: String(plantesRes.data[0].id) }))
         }
+        const quotas = {}
+        for (const p of parcellesData) {
+          try {
+            const qRes = await API.get(`/tokens/quota/${p.id}`)
+            quotas[p.id] = qRes.data
+          } catch { quotas[p.id] = null }
+        }
+        setParcelleQuotas(quotas)
       } catch {}
       finally { setLoading(false) }
     }
@@ -74,8 +86,42 @@ export default function ParcellesPage() {
   }, [])
 
   const refetchParcelles = async () => {
-    try { const res = await API.get("/parcelles"); setParcelles(res.data) } catch {}
+    try {
+      const res = await API.get("/parcelles")
+      const parcellesData = res.data
+      setParcelles(parcellesData)
+      const quotas = {}
+      for (const p of parcellesData) {
+        try {
+          const qRes = await API.get(`/tokens/quota/${p.id}`)
+          quotas[p.id] = qRes.data
+        } catch { quotas[p.id] = null }
+      }
+      setParcelleQuotas(quotas)
+    } catch {}
   }
+
+  useEffect(() => {
+    const selectedPlanteId = addForm.type_plante_id
+    const surfaceValue = addForm.surface_m2
+    if (!selectedPlanteId || !surfaceValue || parseFloat(surfaceValue) <= 0) {
+      setQuotaPreview(null)
+      return
+    }
+    const plante = plantes.find(p => String(p.id) === String(selectedPlanteId))
+    if (!plante || !plante.besoin_l_m2_jour) { setQuotaPreview(null); return }
+    const currentMonth = new Date().getMonth() + 1
+    const daysInMonth = new Date(new Date().getFullYear(), currentMonth, 0).getDate()
+    const facteur = plante.sensibilite_saisonniere?.[String(currentMonth)] || 1.0
+    const quota = parseFloat(surfaceValue) * plante.besoin_l_m2_jour * facteur * daysInMonth
+    setQuotaPreview({
+      quota: quota.toFixed(0),
+      facteur,
+      jours: daysInMonth,
+      besoin: plante.besoin_l_m2_jour,
+      plante_nom: plante.nom_commun || plante.nom,
+    })
+  }, [addForm.type_plante_id, addForm.surface_m2, plantes])
 
   const handleLogout = () => { logout(); navigate("/") }
   const truncateWallet = (addr) => addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
@@ -101,7 +147,12 @@ export default function ParcellesPage() {
 
   const openAddModal = () => {
     setAddError("")
-    setAddForm({ type_plante_id: "", surface_m2: "", date_plantation: "" })
+    setQuotaPreview(null)
+    setAddForm({
+      type_plante_id: plantes.length > 0 ? String(plantes[0].id) : "",
+      surface_m2: "",
+      date_plantation: "",
+    })
     setShowAddForm(true)
   }
 
@@ -347,6 +398,32 @@ export default function ParcellesPage() {
                     <span className="text-sm font-medium text-slate-400">m²</span>
                   </div>
 
+                  {parcelleQuotas[parcelle.id] && (
+                    <div className="p-3 bg-blue-50 rounded-xl">
+                      <div className="text-xs text-gray-400 font-bold uppercase mb-1">Quota mensuel</div>
+                      <div className="text-lg font-black text-[#005d90]">
+                        {parseInt(parcelleQuotas[parcelle.id].quota_theorique).toLocaleString()} L
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Consommé ce mois : {parcelleQuotas[parcelle.id].reel?.toFixed(0) || 0} L
+                      </div>
+                      {parcelleQuotas[parcelle.id].reel > 0 && (
+                        <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: Math.min(100, (parcelleQuotas[parcelle.id].reel /
+                                parcelleQuotas[parcelle.id].quota_theorique) * 100) + "%",
+                              backgroundColor: parcelleQuotas[parcelle.id].reel <
+                                parcelleQuotas[parcelle.id].quota_theorique * 0.8
+                                ? "#2c694e" : "#ba1a1a",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {parcelle.date_plantation && (
                     <div className="text-xs text-slate-400 font-medium">
                       Planté le {new Date(parcelle.date_plantation).toLocaleDateString("fr-FR")}
@@ -417,6 +494,39 @@ export default function ParcellesPage() {
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
                 />
               </div>
+              {quotaPreview && (
+                <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">💧</span>
+                    <span className="font-bold text-[#005d90] text-sm">Quota mensuel calculé</span>
+                  </div>
+                  <div className="text-3xl font-black text-[#005d90] mb-1">
+                    {parseInt(quotaPreview.quota).toLocaleString()} L
+                  </div>
+                  <div className="text-xs text-blue-600 font-medium mb-3">
+                    par mois pour {quotaPreview.plante_nom}
+                  </div>
+                  <div className="bg-white rounded-xl p-3 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">Besoin journalier</span>
+                      <span className="font-bold">{quotaPreview.besoin} L/m²/jour</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">Facteur saisonnier</span>
+                      <span className="font-bold">×{quotaPreview.facteur}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">Jours ce mois</span>
+                      <span className="font-bold">{quotaPreview.jours} jours</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 p-2 bg-green-50 rounded-xl text-center">
+                    <p className="text-xs text-green-700 font-medium">
+                      🎯 Restez sous <strong>{parseInt(quotaPreview.quota).toLocaleString()} L</strong> ce mois pour gagner des tokens
+                    </p>
+                  </div>
+                </div>
+              )}
               {addError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">{addError}</div>}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowAddForm(false)}
