@@ -92,8 +92,16 @@
 - [x] DashboardPage placeholder with stats cards
 - [x] ProtectedRoute component
 
-### Phase 11b — Frontend Pages
-- [ ] Dashboard with real data from API
+### Phase 11b — Dashboard Page ✅
+- [x] Sidebar with navigation
+- [x] KPI cards connected to real API data
+- [x] Consumption chart (SVG)
+- [x] WaterGPT insights panel
+- [x] Parcelles ledger table
+- [x] Marketplace preview
+- [x] Loading state
+
+### Phase 11c — Frontend Pages (remaining)
 - [ ] Parcelles management page
 - [ ] Consumption input form
 - [ ] Asset portfolio / token balance page
