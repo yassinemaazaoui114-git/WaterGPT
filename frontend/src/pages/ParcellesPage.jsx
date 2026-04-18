@@ -436,6 +436,7 @@ export default function ParcellesPage() {
                         Consommé ce mois : {parcelleQuotas[parcelle.id].reel?.toFixed(0) || 0} L
                       </div>
                       {parcelleQuotas[parcelle.id].reel > 0 && (
+                        <>
                         <div className="mt-2 h-2.5 bg-gray-100 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-700"
@@ -470,6 +471,7 @@ export default function ParcellesPage() {
                           </span>
                           <span className="text-gray-400 font-medium">100%</span>
                         </div>
+                        </>
                       )}
                     </div>
                   )}
