@@ -65,10 +65,6 @@ export default function PortefeuillePage() {
     }
   }
 
-  const trustColor = trustScore > 0.7 ? "#22c55e" : trustScore >= 0.4 ? "#facc15" : "#ef4444"
-  const circumference = 251
-  const strokeDashoffset = circumference - (trustScore * circumference)
-
   const handleCalculate = () => {
     const quota = parseFloat(quotaInput)
     const reel = parseFloat(reelInput)
@@ -156,7 +152,7 @@ export default function PortefeuillePage() {
           {/* Page header */}
           <div>
             <span className="text-xs font-bold text-[#005d90] uppercase tracking-[0.2em] mb-2 block">Actifs Numériques</span>
-            <h2 className="text-4xl font-bold tracking-tight text-slate-900">Portefeuille $AQUA</h2>
+            <h2 className="text-4xl font-bold tracking-tight text-slate-900">Portefeuille tokens</h2>
             <p className="text-slate-500 mt-2 font-medium text-sm">Gérez vos tokens et suivez votre score de confiance</p>
           </div>
 
@@ -174,33 +170,23 @@ export default function PortefeuillePage() {
                 <div className="text-4xl font-black tracking-tighter">
                   {(balance.balance ?? 0).toFixed(2)}
                 </div>
-                <div className="text-sm font-semibold opacity-70 uppercase tracking-widest mt-1">Solde Total $AQUA</div>
+                <div className="text-sm font-semibold opacity-70 uppercase tracking-widest mt-1">Solde Total tokens</div>
               </div>
             </div>
 
-            {/* Card 2 — Trust Score (SVG Circle) */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm flex flex-col items-center justify-center hover:shadow-xl transition-all duration-500">
-              <div className="relative w-24 h-24 mb-4">
-                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" strokeWidth="10" />
-                  <circle
-                    cx="50" cy="50" r="40"
-                    fill="none"
-                    stroke={trustColor}
-                    strokeWidth="10"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    style={{ transition: "stroke-dashoffset 0.7s ease" }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xl font-black text-slate-900">{(trustScore * 100).toFixed(0)}</span>
-                </div>
+            {/* Card 2 — Score d'Efficacité */}
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm flex flex-col justify-between hover:shadow-xl transition-all duration-500">
+              <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 w-fit">
+                <span className="material-symbols-outlined">trending_up</span>
               </div>
-              <div className="text-sm font-semibold text-slate-400 uppercase tracking-widest">Trust Score</div>
-              <div className="text-xs font-medium mt-1" style={{ color: trustColor }}>
-                {trustScore > 0.7 ? "Excellent" : trustScore >= 0.4 ? "Bon" : "À améliorer"}
+              <div className="mt-8">
+                <div className="text-3xl font-black tracking-tighter" style={{ color: (balance.balance ?? 0) > 0 ? "#22c55e" : "#94a3b8" }}>
+                  {(balance.balance ?? 0) > 0 ? "Bon ✅" : "En attente ⏳"}
+                </div>
+                <div className="text-sm font-semibold text-slate-400 uppercase tracking-widest mt-1">Score d'Efficacité</div>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  Votre score s'améliore chaque fois que vous consommez moins que votre quota calculé.
+                </p>
               </div>
             </div>
 
@@ -225,6 +211,18 @@ export default function PortefeuillePage() {
             <div className="mb-6">
               <h3 className="text-xl font-bold text-slate-900 tracking-tight">Simuler mes Tokens</h3>
               <p className="text-slate-400 text-sm font-medium mt-1">Calculez combien de tokens vous pouvez gagner en fonction de votre économie d'eau</p>
+            </div>
+
+            <div className="bg-blue-50 rounded-2xl p-4 mb-6">
+              <p className="text-sm text-[#005d90] font-medium leading-relaxed">
+                <span className="font-bold">💡 Comment fonctionnent les tokens ?</span><br/>
+                Chaque mois, le système calcule un quota d'eau personnalisé pour votre parcelle selon la culture et la surface.
+                Si vous consommez MOINS que ce quota, vous gagnez des tokens.
+                Plus vous économisez, plus vous gagnez.
+                <br/><br/>
+                <span className="font-bold">Formule :</span>{" "}
+                tokens = (quota - consommation réelle) × 0.1 × (1 + ratio d'économie)
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -263,7 +261,7 @@ export default function PortefeuillePage() {
                 ) : (
                   <div className="space-y-1">
                     <div className="text-lg font-black text-sky-900">
-                      💰 Estimation: {calcResult.tokens.toFixed(2)} $AQUA
+                      💰 Estimation: {calcResult.tokens.toFixed(2)} tokens
                     </div>
                     <div className="text-sky-600">
                       Économie: <strong>{calcResult.economie.toFixed(0)} L</strong> ({calcResult.ratio.toFixed(1)}% du quota)

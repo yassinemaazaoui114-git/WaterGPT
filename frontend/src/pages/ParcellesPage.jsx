@@ -64,6 +64,9 @@ export default function ParcellesPage() {
         ])
         setParcelles(parcellesRes.data)
         setPlantes(plantesRes.data)
+        if (plantesRes.data.length > 0) {
+          setAddForm((f) => ({ ...f, type_plante_id: String(plantesRes.data[0].id) }))
+        }
       } catch {}
       finally { setLoading(false) }
     }
@@ -111,11 +114,13 @@ export default function ParcellesPage() {
     }
     setAddLoading(true)
     try {
-      await API.post("/parcelles", {
+      const payload = {
         type_plante_id: addForm.type_plante_id,
         surface_m2: parseFloat(addForm.surface_m2),
-        ...(addForm.date_plantation ? { date_plantation: addForm.date_plantation } : {}),
-      })
+        date_plantation: addForm.date_plantation || null,
+      }
+      console.log("Sending:", payload)
+      await API.post("/parcelles", payload)
       await refetchParcelles()
       setShowAddForm(false)
       showToast("Parcelle ajoutée avec succès ✅")
@@ -253,7 +258,7 @@ export default function ParcellesPage() {
               <span className="font-bold">💧 Résultat Tokens —</span>{" "}
               Quota: <strong>{tokenResult.quota_litres?.toFixed(0) ?? "?"} L</strong> ·
               Réel: <strong>{tokenResult.consommation_reelle?.toFixed(0) ?? "?"} L</strong> ·
-              Tokens potentiels: <strong>{tokenResult.tokens_potentiels?.toFixed(2) ?? "?"} $AQUA</strong>
+              Tokens potentiels: <strong>{tokenResult.tokens_potentiels?.toFixed(2) ?? "?"} tokens</strong>
             </div>
           )}
 

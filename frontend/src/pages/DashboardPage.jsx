@@ -10,9 +10,9 @@ export default function DashboardPage() {
 
   const [stats, setStats] = useState({ total_tokens: 0, total_transactions: 0 })
   const [parcelles, setParcelles] = useState([])
-  const [trustScore, setTrustScore] = useState(0.5)
   const [loading, setLoading] = useState(true)
   const [activeNav, setActiveNav] = useState("dashboard")
+  const [period, setPeriod] = useState("30")
 
   // Mint notification
   const [mintMsg, setMintMsg] = useState("")
@@ -41,14 +41,12 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [statsRes, parcellesRes, trustRes] = await Promise.all([
+        const [statsRes, parcellesRes] = await Promise.all([
           API.get("/users/me/stats"),
           API.get("/parcelles"),
-          API.get("/tokens/trust-score"),
         ])
         setStats(statsRes.data)
         setParcelles(parcellesRes.data)
-        setTrustScore(trustRes.data.trust_score ?? 0.5)
       } catch {
         // silently fail — state stays at defaults
       } finally {
@@ -68,9 +66,6 @@ export default function DashboardPage() {
     return addr.slice(0, 6) + "..." + addr.slice(-4)
   }
 
-  const trustColor =
-    trustScore > 0.7 ? "bg-green-500" : trustScore >= 0.4 ? "bg-yellow-400" : "bg-red-500"
-
   // ── Mint handler ──
   const handleMint = () => {
     setMintMsg("⛓️ Fonctionnalité blockchain bientôt disponible. Vos tokens seront mintés sur Polygon Mumbai.")
@@ -85,6 +80,9 @@ export default function DashboardPage() {
     try {
       const res = await API.get("/plantes")
       setPlantesList(res.data)
+      if (res.data.length > 0) {
+        setAddForm((f) => ({ ...f, type_plante_id: String(res.data[0].id) }))
+      }
     } catch {
       setPlantesList([])
     }
@@ -101,10 +99,11 @@ export default function DashboardPage() {
     setAddLoading(true)
     try {
       const payload = {
-        type_plante_id: parseInt(addForm.type_plante_id),
+        type_plante_id: addForm.type_plante_id,
         surface_m2: parseFloat(addForm.surface_m2),
-        ...(addForm.date_plantation ? { date_plantation: addForm.date_plantation } : {}),
+        date_plantation: addForm.date_plantation || null,
       }
+      console.log("Sending:", payload)
       await API.post("/parcelles", payload)
       const res = await API.get("/parcelles")
       setParcelles(res.data)
@@ -204,7 +203,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-6">
             <div className="text-right">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                {stats.total_tokens.toFixed(2)} AQUA
+                {stats.total_tokens.toFixed(2)} tokens
               </div>
               <div className="text-xs font-mono font-medium text-sky-600">
                 {truncateWallet(user?.wallet_address)}
@@ -239,12 +238,20 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-              <button className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-[#005d90] transition-colors bg-[#f2f4f6]">
-                7 Jours
-              </button>
-              <button className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-[#005d90] shadow-sm">
-                30 Jours
-              </button>
+              <button
+                onClick={() => setPeriod("7")}
+                className={period === "7"
+                  ? "px-4 py-2 rounded-xl text-xs font-bold uppercase bg-[#005d90] text-white shadow-sm"
+                  : "px-4 py-2 rounded-xl text-xs font-bold uppercase text-slate-400 bg-[#f2f4f6] hover:text-[#005d90]"
+                }
+              >7 Jours</button>
+              <button
+                onClick={() => setPeriod("30")}
+                className={period === "30"
+                  ? "px-4 py-2 rounded-xl text-xs font-bold uppercase bg-[#005d90] text-white shadow-sm"
+                  : "px-4 py-2 rounded-xl text-xs font-bold uppercase text-slate-400 bg-[#f2f4f6] hover:text-[#005d90]"
+                }
+              >30 Jours</button>
             </div>
           </div>
 
@@ -282,7 +289,7 @@ export default function DashboardPage() {
                     onClick={handleMint}
                     className="text-[10px] font-black uppercase tracking-widest bg-white text-[#005d90] px-4 py-2 rounded-full hover:bg-blue-50 transition-all"
                   >
-                    Mint $AQUA
+                    Calculer tokens
                   </button>
                 </div>
                 <div className="mt-8 z-10 relative">
@@ -290,7 +297,7 @@ export default function DashboardPage() {
                     {stats.total_tokens.toFixed(2)}
                   </div>
                   <div className="text-sm font-semibold opacity-70 uppercase tracking-widest mt-1">
-                    Solde $AQUA
+                    Solde tokens
                   </div>
                 </div>
               </div>
@@ -301,7 +308,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Card 3 — Trust Score */}
+            {/* Card 3 — Efficacité */}
             <div className="bg-white p-6 rounded-[2rem] shadow-sm flex flex-col justify-between hover:shadow-xl transition-all duration-500 border border-transparent hover:border-cyan-100">
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-cyan-50 rounded-2xl text-cyan-600">
@@ -309,17 +316,18 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="mt-8">
-                <div className="text-4xl font-black text-slate-900 tracking-tighter">
-                  {(trustScore * 100).toFixed(1)}/100
+                <div className="text-4xl font-black tracking-tighter" style={{ color: stats.total_tokens > 0 ? "#22c55e" : "#94a3b8" }}>
+                  {stats.total_tokens > 0 ? "Bon" : "En attente"}
                 </div>
                 <div className="text-sm font-semibold text-slate-400 uppercase tracking-widest mt-1">
-                  Trust Score
+                  Efficacité
                 </div>
-                <div className="mt-3 h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-700 ${trustColor}`}
-                    style={{ width: `${trustScore * 100}%` }}
-                  />
+                <div className="mt-3">
+                  {stats.total_tokens > 0 ? (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">✅ Actif</span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">⏳ En attente</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -336,7 +344,7 @@ export default function DashboardPage() {
                     Quota vs Consommation Réelle
                   </h3>
                   <p className="text-slate-400 text-sm font-medium">
-                    Analyse des 30 derniers jours
+                    Analyse des {period} derniers jours
                   </p>
                 </div>
                 <div className="flex gap-4">
@@ -403,7 +411,7 @@ export default function DashboardPage() {
                   <div className="bg-white/60 p-4 rounded-2xl border border-white/40">
                     <p className="text-sm font-medium text-slate-700 leading-relaxed">
                       <span className="font-bold text-[#2c694e]">Opportunité :</span>{" "}
-                      Vos tokens $AQUA peuvent être échangés contre du matériel d'irrigation chez nos partenaires.
+                      Vos tokens peuvent être échangés contre du matériel d'irrigation chez nos partenaires.
                     </p>
                   </div>
                 </div>
@@ -499,7 +507,7 @@ export default function DashboardPage() {
                        style={{ background: "linear-gradient(135deg, #60a5fa, #06b6d4)" }}>
                     <span className="text-4xl">💧</span>
                     <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-black text-[#005d90]">
-                      2 400 AQUA
+                      2 400 tokens
                     </div>
                   </div>
                   <h4 className="font-bold text-slate-900 group-hover:text-[#005d90] transition-colors text-sm">
@@ -512,7 +520,7 @@ export default function DashboardPage() {
                        style={{ background: "linear-gradient(135deg, #4ade80, #10b981)" }}>
                     <span className="text-4xl">🌿</span>
                     <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-black text-[#2c694e]">
-                      1 100 AQUA
+                      1 100 tokens
                     </div>
                   </div>
                   <h4 className="font-bold text-slate-900 group-hover:text-[#2c694e] transition-colors text-sm">
@@ -655,7 +663,7 @@ export default function DashboardPage() {
         expected_water={1000}
         actual_water={800}
         tokens={Math.round(stats.total_tokens)}
-        trust_score={trustScore}
+        trust_score={0.5}
       />
     </div>
   )

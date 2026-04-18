@@ -133,7 +133,7 @@ export default function MarketplacePage() {
           </div>
           <div className="flex items-center gap-4">
             <div className="bg-[#005d90]/10 text-[#005d90] px-4 py-2 rounded-full text-sm font-bold">
-              💰 {balance.toFixed(2)} $AQUA disponibles
+              💰 {balance.toFixed(2)} tokens disponibles
             </div>
           </div>
         </header>
@@ -143,7 +143,7 @@ export default function MarketplacePage() {
           <div>
             <span className="text-xs font-bold text-[#005d90] uppercase tracking-[0.2em] mb-2 block">Récompenses</span>
             <h2 className="text-4xl font-bold tracking-tight text-slate-900">Dépenser mes Tokens</h2>
-            <p className="text-slate-500 mt-2 font-medium text-sm">Échangez vos $AQUA contre du matériel, des services et des formations</p>
+            <p className="text-slate-500 mt-2 font-medium text-sm">Échangez vos tokens contre du matériel, des services et des formations</p>
           </div>
 
           {/* Success message */}
@@ -174,7 +174,7 @@ export default function MarketplacePage() {
                   <div className={`relative h-40 bg-gradient-to-br ${item.gradient} flex items-center justify-center`}>
                     <span className="text-5xl">{item.emoji}</span>
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-xl text-[10px] font-black text-slate-700">
-                      {item.price.toLocaleString("fr-FR")} AQUA
+                      {item.price.toLocaleString("fr-FR")} tokens
                     </div>
                     <div className="absolute top-3 left-3 bg-black/20 backdrop-blur px-3 py-1 rounded-xl text-[10px] font-bold text-white">
                       {item.badge}
@@ -235,16 +235,16 @@ export default function MarketplacePage() {
               <div className="h-px bg-slate-100" />
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500 font-medium">Votre solde</span>
-                <span className="font-bold text-slate-900">{balance.toFixed(2)} $AQUA</span>
+                <span className="font-bold text-slate-900">{balance.toFixed(2)} tokens</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500 font-medium">Coût</span>
-                <span className="font-bold text-red-500">− {selectedItem.price.toLocaleString("fr-FR")} $AQUA</span>
+                <span className="font-bold text-red-500">− {selectedItem.price.toLocaleString("fr-FR")} tokens</span>
               </div>
               <div className="h-px bg-slate-100" />
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500 font-medium">Après échange</span>
-                <span className="font-black text-slate-900">{(balance - selectedItem.price).toFixed(2)} $AQUA</span>
+                <span className="font-black text-slate-900">{(balance - selectedItem.price).toFixed(2)} tokens</span>
               </div>
             </div>
 
