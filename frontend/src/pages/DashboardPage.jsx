@@ -14,6 +14,16 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeNav, setActiveNav] = useState("dashboard")
 
+  // Mint notification
+  const [mintMsg, setMintMsg] = useState("")
+
+  // Add parcelle modal
+  const [showAddParcelle, setShowAddParcelle] = useState(false)
+  const [plantesList, setPlantesList] = useState([])
+  const [addForm, setAddForm] = useState({ type_plante_id: "", surface_m2: "", date_plantation: "" })
+  const [addError, setAddError] = useState("")
+  const [addLoading, setAddLoading] = useState(false)
+
   useEffect(() => {
     const link1 = document.createElement("link")
     link1.rel = "stylesheet"
@@ -59,12 +69,58 @@ export default function DashboardPage() {
   const trustColor =
     trustScore > 0.7 ? "bg-green-500" : trustScore >= 0.4 ? "bg-yellow-400" : "bg-red-500"
 
+  // ── Mint handler ──
+  const handleMint = () => {
+    setMintMsg("⛓️ Fonctionnalité blockchain bientôt disponible. Vos tokens seront mintés sur Polygon Mumbai.")
+    setTimeout(() => setMintMsg(""), 4000)
+  }
+
+  // ── Open add-parcelle modal ──
+  const openAddModal = async () => {
+    setAddError("")
+    setAddForm({ type_plante_id: "", surface_m2: "", date_plantation: "" })
+    setShowAddParcelle(true)
+    try {
+      const res = await API.get("/plantes")
+      setPlantesList(res.data)
+    } catch {
+      setPlantesList([])
+    }
+  }
+
+  // ── Submit new parcelle ──
+  const handleAddParcelle = async (e) => {
+    e.preventDefault()
+    setAddError("")
+    if (!addForm.type_plante_id || !addForm.surface_m2) {
+      setAddError("Veuillez remplir la culture et la surface.")
+      return
+    }
+    setAddLoading(true)
+    try {
+      const payload = {
+        type_plante_id: parseInt(addForm.type_plante_id),
+        surface_m2: parseFloat(addForm.surface_m2),
+        ...(addForm.date_plantation ? { date_plantation: addForm.date_plantation } : {}),
+      }
+      await API.post("/parcelles", payload)
+      const res = await API.get("/parcelles")
+      setParcelles(res.data)
+      setShowAddParcelle(false)
+    } catch (err) {
+      const detail = err?.response?.data?.detail
+      setAddError(detail || "Erreur lors de l'ajout. Vérifiez les données.")
+    } finally {
+      setAddLoading(false)
+    }
+  }
+
   const navItems = [
     { key: "dashboard", icon: "dashboard", label: "Dashboard" },
     { key: "quotas", icon: "opacity", label: "Quotas d'Eau" },
     { key: "marketplace", icon: "storefront", label: "Marketplace" },
-    { key: "portfolio", icon: "account_balance_wallet", label: "Portefeuille" },
-    { key: "settings", icon: "settings", label: "Paramètres" },
+    { key: "portefeuille", icon: "account_balance_wallet", label: "Portefeuille" },
+    { key: "parametres", icon: "settings", label: "Paramètres" },
   ]
 
   if (loading) {
@@ -85,7 +141,6 @@ export default function DashboardPage() {
       <aside className="fixed left-0 top-0 h-screen w-72 flex flex-col z-50 border-r border-slate-200/20"
              style={{ background: "rgba(248,250,252,0.80)", backdropFilter: "blur(20px)" }}>
 
-        {/* Logo */}
         <div className="px-8 pt-8 mb-10">
           <div className="text-2xl font-bold bg-gradient-to-r from-sky-700 to-cyan-500 bg-clip-text text-transparent">
             AquaToken
@@ -95,7 +150,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-4 space-y-2">
           {navItems.map((item) => (
             <button
@@ -113,7 +167,6 @@ export default function DashboardPage() {
           ))}
         </nav>
 
-        {/* Bottom: wallet + logout */}
         <div className="px-6 pb-8 pt-4 border-t border-slate-200/30">
           <div className="text-xs text-slate-400 font-mono mb-3 truncate">
             {truncateWallet(user?.wallet_address)}
@@ -134,9 +187,7 @@ export default function DashboardPage() {
         {/* ── TOP NAV ── */}
         <header className="h-20 sticky top-0 z-40 flex items-center justify-between px-8 border-b border-slate-200/20"
                 style={{ background: "rgba(255,255,255,0.60)", backdropFilter: "blur(12px)" }}>
-          <div className="flex items-center gap-8">
-            <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight">AquaDashboard</h1>
-          </div>
+          <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight">AquaDashboard</h1>
           <div className="flex items-center gap-6">
             <div className="text-right">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
@@ -206,28 +257,35 @@ export default function DashboardPage() {
             </div>
 
             {/* Card 2 — AQUA Balance (gradient) */}
-            <div className="p-6 rounded-[2rem] shadow-lg flex flex-col justify-between text-white relative overflow-hidden group"
-                 style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
-              <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl bg-white/10 -mr-12 -mt-12 group-hover:bg-white/20 transition-all duration-700" />
-              <div className="flex justify-between items-start z-10 relative">
-                <div className="p-3 bg-white/20 rounded-2xl">
-                  <span className="material-symbols-outlined">account_balance_wallet</span>
+            <div>
+              <div className="p-6 rounded-[2rem] shadow-lg flex flex-col justify-between text-white relative overflow-hidden group"
+                   style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl bg-white/10 -mr-12 -mt-12 group-hover:bg-white/20 transition-all duration-700" />
+                <div className="flex justify-between items-start z-10 relative">
+                  <div className="p-3 bg-white/20 rounded-2xl">
+                    <span className="material-symbols-outlined">account_balance_wallet</span>
+                  </div>
+                  <button
+                    onClick={handleMint}
+                    className="text-[10px] font-black uppercase tracking-widest bg-white text-[#005d90] px-4 py-2 rounded-full hover:bg-blue-50 transition-all"
+                  >
+                    Mint $AQUA
+                  </button>
                 </div>
-                <button
-                  onClick={() => alert("Fonctionnalité blockchain bientôt disponible")}
-                  className="text-[10px] font-black uppercase tracking-widest bg-white text-[#005d90] px-4 py-2 rounded-full hover:bg-blue-50 transition-all"
-                >
-                  Mint $AQUA
-                </button>
+                <div className="mt-8 z-10 relative">
+                  <div className="text-4xl font-black tracking-tighter">
+                    {stats.total_tokens.toFixed(2)}
+                  </div>
+                  <div className="text-sm font-semibold opacity-70 uppercase tracking-widest mt-1">
+                    Solde $AQUA
+                  </div>
+                </div>
               </div>
-              <div className="mt-8 z-10 relative">
-                <div className="text-4xl font-black tracking-tighter">
-                  {stats.total_tokens.toFixed(2)}
+              {mintMsg && (
+                <div className="mt-2 p-3 bg-green-50 text-green-700 rounded-xl text-xs font-medium text-center animate-pulse">
+                  {mintMsg}
                 </div>
-                <div className="text-sm font-semibold opacity-70 uppercase tracking-widest mt-1">
-                  Solde $AQUA
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Card 3 — Trust Score */}
@@ -354,7 +412,10 @@ export default function DashboardPage() {
             <div className="xl:col-span-2 bg-white rounded-[2rem] shadow-sm overflow-hidden flex flex-col">
               <div className="p-8 pb-4 flex justify-between items-center">
                 <h3 className="text-xl font-bold text-slate-900 tracking-tight">Mes Parcelles</h3>
-                <button className="text-xs font-bold text-white bg-[#005d90] hover:bg-[#004a73] px-4 py-2 rounded-full transition-colors">
+                <button
+                  onClick={openAddModal}
+                  className="text-xs font-bold text-white bg-[#005d90] hover:bg-[#004a73] px-4 py-2 rounded-full transition-colors"
+                >
                   Ajouter +
                 </button>
               </div>
@@ -419,9 +480,7 @@ export default function DashboardPage() {
                   </button>
                 </div>
               </div>
-
               <div className="space-y-4">
-                {/* Product 1 */}
                 <div className="group cursor-pointer">
                   <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-3 flex items-center justify-center"
                        style={{ background: "linear-gradient(135deg, #60a5fa, #06b6d4)" }}>
@@ -435,8 +494,6 @@ export default function DashboardPage() {
                   </h4>
                   <p className="text-xs font-medium text-slate-400">Économisez jusqu'à 50% d'eau</p>
                 </div>
-
-                {/* Product 2 */}
                 <div className="group cursor-pointer">
                   <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-3 flex items-center justify-center"
                        style={{ background: "linear-gradient(135deg, #4ade80, #10b981)" }}>
@@ -456,6 +513,116 @@ export default function DashboardPage() {
 
         </main>
       </div>
+
+      {/* ── ADD PARCELLE MODAL ── */}
+      {showAddParcelle && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAddParcelle(false) }}
+        >
+          <div className="mt-32 bg-white rounded-[2rem] p-8 shadow-xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-900">Ajouter une Parcelle</h2>
+              <button
+                onClick={() => setShowAddParcelle(false)}
+                className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleAddParcelle} className="space-y-5">
+              {/* Culture select */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Culture *
+                </label>
+                <select
+                  value={addForm.type_plante_id}
+                  onChange={(e) => setAddForm((f) => ({ ...f, type_plante_id: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
+                  required
+                >
+                  <option value="">— Sélectionnez une culture —</option>
+                  {plantesList.length === 0 ? (
+                    <option disabled>Chargement...</option>
+                  ) : (
+                    plantesList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nom_commun || p.nom} ({p.besoin_eau_m3_ha_jour ?? "?"} m³/ha/j)
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* Surface */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Surface (m²) *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  placeholder="Ex: 5000"
+                  value={addForm.surface_m2}
+                  onChange={(e) => setAddForm((f) => ({ ...f, surface_m2: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
+                  required
+                />
+              </div>
+
+              {/* Date plantation (optional) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Date de plantation <span className="font-normal text-slate-400 normal-case">(optionnel)</span>
+                </label>
+                <input
+                  type="date"
+                  value={addForm.date_plantation}
+                  onChange={(e) => setAddForm((f) => ({ ...f, date_plantation: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
+                />
+              </div>
+
+              {/* Error */}
+              {addError && (
+                <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">
+                  {addError}
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddParcelle(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}
+                >
+                  {addLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Ajout...
+                    </span>
+                  ) : "Ajouter"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* WaterGPT Widget */}
       <WaterGPTWidget
