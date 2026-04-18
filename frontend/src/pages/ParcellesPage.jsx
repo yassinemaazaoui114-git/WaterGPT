@@ -436,17 +436,39 @@ export default function ParcellesPage() {
                         Consommé ce mois : {parcelleQuotas[parcelle.id].reel?.toFixed(0) || 0} L
                       </div>
                       {parcelleQuotas[parcelle.id].reel > 0 && (
-                        <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="mt-2 h-2.5 bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className="h-full rounded-full transition-all"
+                            className="h-full rounded-full transition-all duration-700"
                             style={{
                               width: Math.min(100, (parcelleQuotas[parcelle.id].reel /
                                 parcelleQuotas[parcelle.id].quota_theorique) * 100) + "%",
-                              backgroundColor: parcelleQuotas[parcelle.id].reel <
-                                parcelleQuotas[parcelle.id].quota_theorique * 0.8
-                                ? "#2c694e" : "#ba1a1a",
+                              background: (() => {
+                                const ratio = parcelleQuotas[parcelle.id].reel /
+                                  parcelleQuotas[parcelle.id].quota_theorique
+                                if (ratio <= 0.5) return "linear-gradient(90deg, #2c694e, #4ade80)"
+                                if (ratio <= 0.75) return "linear-gradient(90deg, #4ade80, #facc15)"
+                                if (ratio <= 0.9) return "linear-gradient(90deg, #facc15, #f97316)"
+                                return "linear-gradient(90deg, #f97316, #ba1a1a)"
+                              })()
                             }}
                           />
+                        </div>
+                        <div className="flex justify-between text-[10px] mt-1">
+                          <span className="text-gray-400 font-medium">0%</span>
+                          <span className="font-bold" style={{
+                            color: (() => {
+                              const ratio = parcelleQuotas[parcelle.id].reel /
+                                parcelleQuotas[parcelle.id].quota_theorique
+                              if (ratio <= 0.5) return "#2c694e"
+                              if (ratio <= 0.75) return "#ca8a04"
+                              if (ratio <= 0.9) return "#ea580c"
+                              return "#ba1a1a"
+                            })()
+                          }}>
+                            {Math.min(100, ((parcelleQuotas[parcelle.id].reel /
+                              parcelleQuotas[parcelle.id].quota_theorique) * 100)).toFixed(0)}% du quota
+                          </span>
+                          <span className="text-gray-400 font-medium">100%</span>
                         </div>
                       )}
                     </div>
