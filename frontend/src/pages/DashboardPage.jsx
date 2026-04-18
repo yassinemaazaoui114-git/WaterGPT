@@ -23,6 +23,8 @@ export default function DashboardPage() {
   const [addForm, setAddForm] = useState({ type_plante_id: "", surface_m2: "", date_plantation: "" })
   const [addError, setAddError] = useState("")
   const [addLoading, setAddLoading] = useState(false)
+  const [addSuccess, setAddSuccess] = useState("")
+  const [parametresToast, setParametresToast] = useState(false)
 
   useEffect(() => {
     const link1 = document.createElement("link")
@@ -107,6 +109,8 @@ export default function DashboardPage() {
       const res = await API.get("/parcelles")
       setParcelles(res.data)
       setShowAddParcelle(false)
+      setAddSuccess("Parcelle ajoutée avec succès ✅")
+      setTimeout(() => setAddSuccess(""), 3000)
     } catch (err) {
       const detail = err?.response?.data?.detail
       setAddError(detail || "Erreur lors de l'ajout. Vérifiez les données.")
@@ -154,7 +158,16 @@ export default function DashboardPage() {
           {navItems.map((item) => (
             <button
               key={item.key}
-              onClick={() => setActiveNav(item.key)}
+              onClick={() => {
+                setActiveNav(item.key)
+                if (item.key === "parametres") {
+                  setParametresToast(true)
+                  setTimeout(() => setParametresToast(false), 3000)
+                } else {
+                  const routes = { dashboard: "/dashboard", quotas: "/parcelles", marketplace: "/marketplace", portefeuille: "/portefeuille" }
+                  if (routes[item.key]) navigate(routes[item.key])
+                }
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
                 activeNav === item.key
                   ? "bg-white shadow-sm text-sky-700 font-semibold"
@@ -621,6 +634,17 @@ export default function DashboardPage() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {addSuccess && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-2xl shadow-xl text-sm font-bold animate-pulse">
+          {addSuccess}
+        </div>
+      )}
+      {parametresToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-xl text-sm font-bold">
+          ⚙️ Paramètres bientôt disponibles.
         </div>
       )}
 
