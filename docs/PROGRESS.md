@@ -51,16 +51,20 @@
 - [x] JWT middleware (get_current_user)
 - [x] bcrypt password hashing
 
+### Phase 8 — API Routes ✅
+- [x] GET /users/me
+- [x] GET /users/me/stats
+- [x] GET/POST/DELETE /parcelles
+- [x] POST/GET /consommation
+- [x] GET /consommation/{id}/summary
+- [x] GET /plantes (public)
+- [x] Seed script for referentiel_plantes
+
 ---
 
 ## ⏳ In Progress
 
-### Phase 8 — API Routes (NEXT)
-- [ ] GET/POST /parcelles
-- [ ] GET/POST /consommation
-- [ ] GET /users/me
-
-### Phase 9 — Token Calculation Service
+### Phase 9 — Token Calculation Service (NEXT)
 - [ ] calculate_quota(parcelle_id, mois, annee)
 - [ ] calculate_tokens(quota, reel)
 - [ ] calculate_trust_score(user_id)

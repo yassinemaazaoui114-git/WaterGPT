@@ -10,6 +10,10 @@ from pdf_loader import load_and_chunk_pdf
 from rag_engine import RAGEngine
 from llm_client import call_llm
 from routers.auth_router import router as auth_router
+from routers.users_router import router as users_router
+from routers.parcelles_router import router as parcelles_router
+from routers.consommation_router import router as consommation_router
+from routers.plantes_router import router as plantes_router
 from database import create_tables
 
 
@@ -72,8 +76,12 @@ app = FastAPI(
 # CORS — Autoriser les requêtes depuis le frontend React
 # ─────────────────────────────────────────
 
-# Enregistrer le router d'authentification (/auth/register, /auth/login)
+# Enregistrer tous les routers de l'application
 app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(parcelles_router)
+app.include_router(consommation_router)
+app.include_router(plantes_router)
 
 app.add_middleware(
     CORSMiddleware,
