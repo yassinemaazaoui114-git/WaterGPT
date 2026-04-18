@@ -14,6 +14,7 @@ from routers.users_router import router as users_router
 from routers.parcelles_router import router as parcelles_router
 from routers.consommation_router import router as consommation_router
 from routers.plantes_router import router as plantes_router
+from routers.tokens_router import router as tokens_router
 from database import create_tables
 
 
@@ -82,6 +83,7 @@ app.include_router(users_router)
 app.include_router(parcelles_router)
 app.include_router(consommation_router)
 app.include_router(plantes_router)
+app.include_router(tokens_router)
 
 app.add_middleware(
     CORSMiddleware,

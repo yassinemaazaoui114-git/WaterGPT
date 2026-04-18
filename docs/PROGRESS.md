@@ -62,15 +62,22 @@
 
 ---
 
+### Phase 9 — Token Calculation Service ✅
+- [x] calculate_quota (surface × besoin × facteur_saisonnier × jours)
+- [x] calculate_consommation_reelle (SUM from DB)
+- [x] calculate_tokens (official formula with ratio bonus)
+- [x] calculate_trust_score (based on transaction history)
+- [x] mint_tokens (full pipeline)
+- [x] GET /tokens/quota/{parcelle_id}
+- [x] POST /tokens/mint
+- [x] GET /tokens/balance
+- [x] GET /tokens/trust-score
+
+---
+
 ## ⏳ In Progress
 
-### Phase 9 — Token Calculation Service (NEXT)
-- [ ] calculate_quota(parcelle_id, mois, annee)
-- [ ] calculate_tokens(quota, reel)
-- [ ] calculate_trust_score(user_id)
-- [ ] Seed referentiel_plantes with olive, blé, tomate, maïs data
-
-### Phase 10 — Smart Contract
+### Phase 10 — Smart Contract (NEXT)
 - [ ] ERC20 + Ownable + ReentrancyGuard
 - [ ] mintRewards function
 - [ ] Deploy to Polygon Mumbai testnet
