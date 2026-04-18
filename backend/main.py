@@ -9,6 +9,8 @@ import os
 from pdf_loader import load_and_chunk_pdf
 from rag_engine import RAGEngine
 from llm_client import call_llm
+from routers.auth_router import router as auth_router
+from database import create_tables
 
 
 # ─────────────────────────────────────────
@@ -30,6 +32,10 @@ rag_engine = RAGEngine()
 async def lifespan(app: FastAPI):
     # ── Démarrage ──
     try:
+        # Créer toutes les tables PostgreSQL si elles n'existent pas encore
+        await create_tables()
+        print("[MAIN] Base de données initialisée")
+
         # Tenter de charger un index FAISS déjà existant sur le disque
         if not rag_engine.load_index():
             print("[MAIN] Aucun index trouvé — construction depuis le PDF...")
@@ -65,6 +71,9 @@ app = FastAPI(
 # ─────────────────────────────────────────
 # CORS — Autoriser les requêtes depuis le frontend React
 # ─────────────────────────────────────────
+
+# Enregistrer le router d'authentification (/auth/register, /auth/login)
+app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,

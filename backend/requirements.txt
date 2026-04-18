@@ -10,3 +10,8 @@ pydantic
 python-dotenv
 reportlab
 google-generativeai
+python-jose[cryptography]
+passlib[bcrypt]
+groq
+asyncpg
+sqlalchemy[asyncio]

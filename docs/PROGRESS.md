@@ -45,21 +45,17 @@
 - Enums: UserType, SaisonType, TransactionType
 - Indexes on wallet_address, user_id, parcelle+date
 
+### Phase 7 — JWT Authentication ✅
+- [x] POST /auth/register (wallet + type + localisation)
+- [x] POST /auth/login (wallet → JWT token)
+- [x] JWT middleware (get_current_user)
+- [x] bcrypt password hashing
+
 ---
 
 ## ⏳ In Progress
 
-### Phase 7 — JWT Authentication (NEXT)
-- [ ] POST /auth/register (wallet + type + localisation)
-- [ ] POST /auth/login (wallet → JWT token)
-- [ ] JWT middleware (protect routes)
-- [ ] Password hashing with bcrypt
-
----
-
-## 📋 Planned
-
-### Phase 8 — API Routes
+### Phase 8 — API Routes (NEXT)
 - [ ] GET/POST /parcelles
 - [ ] GET/POST /consommation
 - [ ] GET /users/me

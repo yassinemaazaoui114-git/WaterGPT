@@ -82,6 +82,8 @@ class User(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     wallet_address = Column(String(42), unique=True, nullable=False)
+    # Mot de passe haché avec bcrypt — jamais stocké en clair
+    password_hash = Column(String(255), nullable=False, default="")
     type = Column(Enum(UserType), nullable=False)
     localisation = Column(String(100))
     created_at = Column(
