@@ -1,25 +1,22 @@
-import WaterGPTWidget from "./components/WaterGPTWidget"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { AuthProvider } from "./context/AuthContext"
+import ProtectedRoute from "./components/ProtectedRoute"
+import LoginPage from "./pages/LoginPage"
+import DashboardPage from "./pages/DashboardPage"
 
-function App() {
+export default function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-[#005d90] mb-2">AquaToken</h1>
-        <p className="text-gray-500">Plateforme de conservation d'eau</p>
-        <p className="text-sm text-gray-400 mt-4">
-          👉 Cliquez sur le bouton bleu en bas à droite pour ouvrir WaterGPT
-        </p>
-      </div>
-      <WaterGPTWidget
-        crop_type="olive"
-        region="Sfax"
-        expected_water={1000}
-        actual_water={800}
-        tokens={150}
-        trust_score={0.85}
-      />
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
-
-export default App

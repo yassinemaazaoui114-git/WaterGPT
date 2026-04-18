@@ -83,13 +83,21 @@
 - [ ] Deploy to Polygon Mumbai testnet
 - [ ] web3.py integration in backend
 
-### Phase 11 — Frontend Pages
-- [ ] Dashboard page
+### Phase 11a — Frontend Auth + Routing ✅
+- [x] React Router setup (react-router-dom v6)
+- [x] AuthContext with login/register/logout
+- [x] JWT stored in localStorage
+- [x] axios client with auth interceptor
+- [x] LoginPage with toggle login/register, glass card design
+- [x] DashboardPage placeholder with stats cards
+- [x] ProtectedRoute component
+
+### Phase 11b — Frontend Pages
+- [ ] Dashboard with real data from API
 - [ ] Parcelles management page
 - [ ] Consumption input form
 - [ ] Asset portfolio / token balance page
 - [ ] Marketplace page
-- [ ] Connect wallet page
 
 ### Phase 12 — Integration & Polish
 - [ ] Connect all frontend pages to backend API
