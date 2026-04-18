@@ -159,6 +159,7 @@ export default function ParcellesPage() {
       showToast("Consommation enregistrée ✅", 4000)
       try {
         const quotaRes = await API.get(`/tokens/quota/${selectedParcelle.id}`)
+        console.log("Token API response:", quotaRes.data)
         setTokenResult(quotaRes.data)
       } catch {}
     } catch (err) {
@@ -253,12 +254,55 @@ export default function ParcellesPage() {
 
           {/* Token result info card */}
           {tokenResult && (
-            <div className="p-5 rounded-2xl border border-sky-200 text-sm font-medium text-sky-800"
-                 style={{ background: "linear-gradient(135deg, #e0f4ff, #f0fbff)" }}>
-              <span className="font-bold">💧 Résultat Tokens —</span>{" "}
-              Quota: <strong>{tokenResult.quota_litres?.toFixed(0) ?? "?"} L</strong> ·
-              Réel: <strong>{tokenResult.consommation_reelle?.toFixed(0) ?? "?"} L</strong> ·
-              Tokens potentiels: <strong>{tokenResult.tokens_potentiels?.toFixed(2) ?? "?"} tokens</strong>
+            <div className={`p-5 rounded-2xl mt-4 ${tokenResult.eligible
+              ? 'bg-green-50 border border-green-200'
+              : 'bg-gray-50 border border-gray-200'}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">{tokenResult.eligible ? '🎉' : '💧'}</span>
+                <span className="font-bold text-[#005d90]">
+                  {tokenResult.eligible ? 'Tokens gagnés !' : 'Résultat'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-white rounded-xl p-3">
+                  <div className="text-gray-400 text-xs font-bold uppercase">Quota mensuel</div>
+                  <div className="text-lg font-black text-[#005d90]">
+                    {tokenResult.quota_theorique?.toFixed(0)} L
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-3">
+                  <div className="text-gray-400 text-xs font-bold uppercase">Consommé</div>
+                  <div className="text-lg font-black text-gray-700">
+                    {tokenResult.reel?.toFixed(0)} L
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-3">
+                  <div className="text-gray-400 text-xs font-bold uppercase">Économie</div>
+                  <div className="text-lg font-black text-green-600">
+                    {tokenResult.economie?.toFixed(0)} L
+                  </div>
+                </div>
+                <div className={`rounded-xl p-3 ${tokenResult.eligible ? 'bg-[#005d90]' : 'bg-white'}`}>
+                  <div className={`text-xs font-bold uppercase ${tokenResult.eligible ? 'text-blue-200' : 'text-gray-400'}`}>
+                    Tokens gagnés
+                  </div>
+                  <div className={`text-lg font-black ${tokenResult.eligible ? 'text-white' : 'text-gray-400'}`}>
+                    {tokenResult.eligible
+                      ? tokenResult.tokens?.toFixed(2) + ' tokens'
+                      : 'Non éligible'}
+                  </div>
+                </div>
+              </div>
+              {!tokenResult.eligible && (
+                <p className="text-xs text-gray-500 mt-3 text-center">
+                  Économie insuffisante (minimum 5% du quota requis)
+                </p>
+              )}
+              {tokenResult.eligible && (
+                <p className="text-xs text-green-600 mt-3 text-center font-medium">
+                  ✅ Ratio d'économie: {tokenResult.ratio?.toFixed(1)}% — Excellent ! Continuez comme ça.
+                </p>
+              )}
             </div>
           )}
 
