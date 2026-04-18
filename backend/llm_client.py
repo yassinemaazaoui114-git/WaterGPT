@@ -43,6 +43,14 @@ Règles :
 - Mentionner les organisations tunisiennes quand pertinent : UTAP, SONEDE, GDA
 - Être concis et actionnable
 - Tu as accès à une base de connaissances sur la conservation de l'eau. Utilise-la toujours.
+
+Règles de format :
+- Maximum 4 phrases par réponse
+- Jamais de listes numérotées de plus de 3 éléments
+- Être direct et actionnable
+- Pas d'introduction ni de conclusion longue
+- Si tu donnes des conseils, maximum 2 conseils concrets par message
+- Ne jamais répéter une information déjà donnée dans la conversation
 """
 
 
@@ -96,7 +104,7 @@ def call_llm(
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            max_tokens=1024,
+            max_tokens=400,
             temperature=0.7,
         )
 

@@ -726,10 +726,12 @@ export default function ParcellesPage() {
       )}
 
       <WaterGPTWidget
-        crop_type={parcelles.length > 0 ? getPlanteName(parcelles[0]?.type_plante_id) : "non spécifié"}
+        crop_type={parcelles.length > 0
+          ? (plantes.find(p => String(p.id) === String(parcelles[0]?.type_plante_id))?.nom?.toLowerCase() || "olive")
+          : "olive"}
         region={user?.localisation || "Tunisie"}
-        expected_water={1000}
-        actual_water={800}
+        expected_water={parcelleQuotas[parcelles[0]?.id]?.quota_theorique || 1000}
+        actual_water={parcelleQuotas[parcelles[0]?.id]?.reel || 0}
         tokens={0}
         trust_score={0.5}
       />

@@ -11,6 +11,23 @@ const QUICK_QUESTIONS = [
 const WELCOME_TEXT =
   "Bonjour ! Je suis WaterGPT 💧\nJe peux vous aider avec vos questions sur l'irrigation, les cultures et le système de tokens AquaToken.\nComment puis-je vous aider aujourd'hui ?"
 
+// ── Markdown renderer ─────────────────────────────────────────────────────────
+
+function renderText(text) {
+  return text.split('\n').map((line, lineIdx, arr) => {
+    const parts = line.split(/\*\*(.*?)\*\*/g)
+    const rendered = parts.map((part, i) =>
+      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    )
+    return (
+      <span key={lineIdx}>
+        {rendered}
+        {lineIdx < arr.length - 1 && <br />}
+      </span>
+    )
+  })
+}
+
 // ── Bubble components ────────────────────────────────────────────────────────
 
 function UserBubble({ text }) {
@@ -37,10 +54,10 @@ function BotBubble({ text }) {
         🤖
       </div>
       <div
-        className="max-w-[80%] px-4 py-3 rounded-2xl rounded-tl-none text-sm leading-relaxed shadow-sm whitespace-pre-line"
+        className="max-w-[80%] px-4 py-3 rounded-2xl rounded-tl-none text-sm leading-relaxed shadow-sm"
         style={{ background: "#ffffff", color: "#191c1e" }}
       >
-        {text}
+        {renderText(text)}
       </div>
     </div>
   )

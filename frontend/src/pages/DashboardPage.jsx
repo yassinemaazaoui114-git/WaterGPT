@@ -10,6 +10,8 @@ export default function DashboardPage() {
 
   const [stats, setStats] = useState({ total_tokens: 0, total_transactions: 0 })
   const [parcelles, setParcelles] = useState([])
+  const [plantesMap, setPlantesMap] = useState({})
+  const [firstQuota, setFirstQuota] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeNav, setActiveNav] = useState("dashboard")
   const [period, setPeriod] = useState("30")
@@ -41,12 +43,23 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [statsRes, parcellesRes] = await Promise.all([
+        const [statsRes, parcellesRes, plantesRes] = await Promise.all([
           API.get("/users/me/stats"),
           API.get("/parcelles"),
+          API.get("/plantes"),
         ])
         setStats(statsRes.data)
-        setParcelles(parcellesRes.data)
+        const parcellesData = parcellesRes.data
+        setParcelles(parcellesData)
+        const map = {}
+        plantesRes.data.forEach(p => { map[p.id] = p })
+        setPlantesMap(map)
+        if (parcellesData.length > 0) {
+          try {
+            const quotaRes = await API.get(`/tokens/quota/${parcellesData[0].id}`)
+            setFirstQuota(quotaRes.data)
+          } catch {}
+        }
       } catch {
         // silently fail — state stays at defaults
       } finally {
@@ -658,10 +671,12 @@ export default function DashboardPage() {
 
       {/* WaterGPT Widget */}
       <WaterGPTWidget
-        crop_type={parcelles.length > 0 ? "olive" : "non spécifié"}
+        crop_type={parcelles.length > 0 && plantesMap[parcelles[0]?.type_plante_id]
+          ? plantesMap[parcelles[0].type_plante_id].nom.toLowerCase()
+          : "olive"}
         region={user?.localisation || "Tunisie"}
-        expected_water={1000}
-        actual_water={800}
+        expected_water={firstQuota?.quota_theorique || 1000}
+        actual_water={firstQuota?.reel || 0}
         tokens={Math.round(stats.total_tokens)}
         trust_score={0.5}
       />
