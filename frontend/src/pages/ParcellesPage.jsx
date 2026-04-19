@@ -39,6 +39,8 @@ export default function ParcellesPage() {
   const [tokenResult, setTokenResult] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [errorMsg, setErrorMsg] = useState("")
+  const [minting, setMinting] = useState(false)
+  const [mintSuccess, setMintSuccess] = useState(null)
 
   const activeNav = "quotas"
   const navItems = [
@@ -209,7 +211,33 @@ export default function ParcellesPage() {
     setConsoError("")
     setConsoForm({ date: new Date().toISOString().split("T")[0], litres_consommes: "", saison: getSaisonFromMonth() })
     setTokenResult(null)
+    setMintSuccess(null)
     setShowConsoForm(true)
+  }
+
+  const handleMint = async (parcelleId) => {
+    setMinting(true)
+    try {
+      const currentMonth = new Date().getMonth() + 1
+      const currentYear = new Date().getFullYear()
+      const res = await API.post("/tokens/mint", {
+        parcelle_id: parcelleId,
+        mois: currentMonth,
+        annee: currentYear,
+      })
+      if (res.data.success) {
+        setMintSuccess({ tokens: res.data.tokens_minted, tx_hash: res.data.tx_hash })
+        setTokenResult(null)
+      } else {
+        setErrorMsg(res.data.reason || "Impossible de réclamer les tokens")
+        setTimeout(() => setErrorMsg(""), 4000)
+      }
+    } catch (err) {
+      setErrorMsg(err.response?.data?.detail || "Erreur lors de la réclamation")
+      setTimeout(() => setErrorMsg(""), 4000)
+    } finally {
+      setMinting(false)
+    }
   }
 
   const handleAddConso = async (e) => {
@@ -381,6 +409,47 @@ export default function ParcellesPage() {
                   ✅ Ratio d'économie: {tokenResult.ratio?.toFixed(1)}% — Excellent ! Continuez comme ça.
                 </p>
               )}
+              {tokenResult.eligible && !mintSuccess && (
+                <button
+                  onClick={() => handleMint(selectedParcelle.id)}
+                  disabled={minting}
+                  className="w-full mt-4 py-4 rounded-2xl font-black text-white bg-gradient-to-r from-[#2c694e] to-[#4ade80] hover:opacity-90 transition-all text-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {minting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Réclamation en cours...
+                    </>
+                  ) : (
+                    <>🪙 Réclamer {tokenResult.tokens?.toFixed(2)} tokens</>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Mint success card */}
+          {mintSuccess && (
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
+              <div className="text-4xl mb-2">🎉</div>
+              <div className="font-black text-green-700 text-xl mb-1">
+                +{mintSuccess.tokens?.toFixed(2)} tokens reçus !
+              </div>
+              <div className="text-xs text-green-600 font-medium mb-3">
+                Tokens ajoutés à votre solde avec succès
+              </div>
+              <div className="bg-white rounded-xl p-3">
+                <div className="text-xs text-gray-400 font-bold uppercase mb-1">Transaction</div>
+                <div className="font-mono text-xs text-[#005d90] break-all">
+                  {mintSuccess.tx_hash?.slice(0, 42)}...
+                </div>
+              </div>
+              <button
+                onClick={() => { setMintSuccess(null); setSelectedParcelle(null); setShowConsoForm(false) }}
+                className="mt-3 text-sm text-green-600 font-bold hover:underline"
+              >
+                Fermer ✓
+              </button>
             </div>
           )}
 
