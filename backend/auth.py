@@ -8,6 +8,8 @@ from sqlalchemy import select
 from database import get_db, User
 from dotenv import load_dotenv
 import os
+import random
+import string
 
 
 # ─────────────────────────────────────────
@@ -53,6 +55,22 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def generate_aqua_id() -> str:
+    """Génère un identifiant AquaToken format AQ-XXXX (sans O, 0, I, 1)."""
+    chars = (string.ascii_uppercase + string.digits).replace('O','').replace('0','').replace('I','').replace('1','')
+    code = ''.join(random.choices(chars, k=4))
+    return f"AQ-{code}"
+
+
+async def generate_unique_aqua_id(db: AsyncSession) -> str:
+    """Génère un AQ-ID unique en vérifiant l'absence de doublon en base."""
+    while True:
+        aqua_id = generate_aqua_id()
+        result = await db.execute(select(User).where(User.aqua_id == aqua_id))
+        if not result.scalar_one_or_none():
+            return aqua_id
+
+
 def decode_token(token: str) -> dict:
     """
     Décode et valide la signature du JWT.
@@ -81,19 +99,19 @@ async def get_current_user(
     Dépendance FastAPI : valide le Bearer token et retourne l'objet User correspondant.
     À injecter dans les routes protégées via Depends(get_current_user).
     """
-    # Décoder le token pour récupérer le wallet_address (champ 'sub')
+    # Décoder le token pour récupérer le gsm (champ 'sub')
     payload = decode_token(credentials.credentials)
-    wallet_address = payload.get("sub")
+    gsm = payload.get("sub")
 
-    if not wallet_address:
+    if not gsm:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token invalide : champ 'sub' manquant",
         )
 
-    # Chercher l'utilisateur en base par son wallet_address
+    # Chercher l'utilisateur en base par son gsm
     result = await db.execute(
-        select(User).where(User.wallet_address == wallet_address)
+        select(User).where(User.gsm == gsm)
     )
     user = result.scalar_one_or_none()
 

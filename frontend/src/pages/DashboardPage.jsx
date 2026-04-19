@@ -74,10 +74,7 @@ export default function DashboardPage() {
     navigate("/")
   }
 
-  const truncateWallet = (addr) => {
-    if (!addr) return ""
-    return addr.slice(0, 6) + "..." + addr.slice(-4)
-  }
+  const truncateWallet = () => ""  // kept for compatibility — unused
 
   // ── Mint handler ──
   const handleMint = () => {
@@ -193,8 +190,10 @@ export default function DashboardPage() {
         </nav>
 
         <div className="px-6 pb-8 pt-4 border-t border-slate-200/30">
-          <div className="text-xs text-slate-400 font-mono mb-3 truncate">
-            {truncateWallet(user?.wallet_address)}
+          <div className="px-4 mb-3">
+            <div className="text-xs text-gray-400 font-bold uppercase mb-1">Identifiant</div>
+            <div className="text-sm font-black text-[#005d90] font-mono">{user?.aqua_id}</div>
+            <div className="text-xs text-gray-500">{user?.prenom} {user?.nom}</div>
           </div>
           <button
             onClick={handleLogout}
@@ -219,7 +218,7 @@ export default function DashboardPage() {
                 {stats.total_tokens.toFixed(2)} tokens
               </div>
               <div className="text-xs font-mono font-medium text-sky-600">
-                {truncateWallet(user?.wallet_address)}
+                <span className="font-bold text-[#005d90]">{user?.prenom} · {user?.aqua_id}</span>
               </div>
             </div>
             <div className="flex gap-1">
@@ -243,11 +242,10 @@ export default function DashboardPage() {
                 Aperçu du Système
               </span>
               <h2 className="text-4xl font-bold tracking-tight text-slate-900">
-                Bienvenue,{" "}
-                {user?.type === "agriculteur" ? "Agriculteur" : "Entreprise"}
+                Bienvenue, {user?.prenom || (user?.type === "agriculteur" ? "Agriculteur" : "Entreprise")}
               </h2>
               <p className="text-slate-500 mt-2 font-medium font-mono text-sm">
-                {truncateWallet(user?.wallet_address)}
+                {user?.aqua_id}
               </p>
             </div>
             <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">

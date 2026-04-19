@@ -16,31 +16,37 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = async (wallet_address, password) => {
-    const response = await API.post("/auth/login", { wallet_address, password })
+  const login = async (gsm, password) => {
+    const response = await API.post("/auth/login", { gsm, password })
     const data = response.data
     localStorage.setItem("aquatoken_jwt", data.access_token)
     localStorage.setItem("aquatoken_user", JSON.stringify({
       id: data.user_id,
-      wallet_address: data.wallet_address,
+      aqua_id: data.aqua_id,
+      prenom: data.prenom,
+      nom: data.nom,
+      gsm: data.gsm,
       type: data.type,
     }))
-    setUser({ id: data.user_id, wallet_address: data.wallet_address, type: data.type })
+    setUser({ id: data.user_id, aqua_id: data.aqua_id, prenom: data.prenom, nom: data.nom, gsm: data.gsm, type: data.type })
     return data
   }
 
-  const register = async (wallet_address, password, type, localisation) => {
+  const register = async (prenom, nom, gsm, password, type, localisation) => {
     const response = await API.post("/auth/register", {
-      wallet_address, password, type, localisation,
+      prenom, nom, gsm, password, type, localisation,
     })
     const data = response.data
     localStorage.setItem("aquatoken_jwt", data.access_token)
     localStorage.setItem("aquatoken_user", JSON.stringify({
       id: data.user_id,
-      wallet_address: data.wallet_address,
+      aqua_id: data.aqua_id,
+      prenom: data.prenom,
+      nom: data.nom,
+      gsm: data.gsm,
       type: data.type,
     }))
-    setUser({ id: data.user_id, wallet_address: data.wallet_address, type: data.type })
+    setUser({ id: data.user_id, aqua_id: data.aqua_id, prenom: data.prenom, nom: data.nom, gsm: data.gsm, type: data.type })
     return data
   }
 

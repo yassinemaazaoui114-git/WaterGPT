@@ -8,14 +8,18 @@ export default function LoginPage() {
   const [mode, setMode] = useState("login") // "login" | "register"
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [registeredAquaId, setRegisteredAquaId] = useState("")
 
-  // Form fields
-  const [wallet, setWallet] = useState("")
+  // Login fields
+  const [gsm, setGsm] = useState("")
   const [password, setPassword] = useState("")
+
+  // Register-only fields
+  const [prenom, setPrenom] = useState("")
+  const [nom, setNom] = useState("")
   const [userType, setUserType] = useState("agriculteur")
   const [localisation, setLocalisation] = useState("")
 
-  // Inject Material Symbols font
   useEffect(() => {
     const link = document.createElement("link")
     link.href = "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
@@ -24,7 +28,6 @@ export default function LoginPage() {
     return () => document.head.removeChild(link)
   }, [])
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) navigate("/dashboard")
   }, [user, navigate])
@@ -35,19 +38,57 @@ export default function LoginPage() {
     setLoading(true)
     try {
       if (mode === "login") {
-        await login(wallet, password)
+        await login(gsm, password)
+        navigate("/dashboard")
       } else {
-        await register(wallet, password, userType, localisation)
+        const data = await register(prenom, nom, gsm, password, userType, localisation)
+        setRegisteredAquaId(data.aqua_id)
+        // Don't navigate immediately — show the AQ-ID card first
       }
-      navigate("/dashboard")
     } catch (err) {
       const status = err?.response?.status
-      if (status === 401) setError("Wallet ou mot de passe incorrect")
-      else if (status === 400) setError("Ce wallet est déjà enregistré")
+      const detail = err?.response?.data?.detail
+      if (status === 401) setError("Numéro GSM ou mot de passe incorrect")
+      else if (status === 400) setError(detail || "Données invalides")
       else setError("Erreur de connexion. Vérifiez le serveur.")
     } finally {
       setLoading(false)
     }
+  }
+
+  // After register — show AQ-ID and let user go to dashboard
+  if (registeredAquaId) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, #001d32 0%, #003d5c 50%, #00626f 100%)" }}
+      >
+        <div className="relative z-10 w-full max-w-md rounded-[2rem] p-8 shadow-2xl text-center"
+             style={{ background: "rgba(255,255,255,0.75)", backdropFilter: "blur(24px)" }}>
+          <div className="text-5xl mb-4">💧</div>
+          <h2 className="text-2xl font-black text-[#005d90] mb-2">Compte créé !</h2>
+          <p className="text-slate-500 text-sm mb-6">Bienvenue sur AquaToken, {prenom} !</p>
+
+          <div className="bg-blue-50 rounded-2xl p-6 mb-6">
+            <p className="text-xs text-gray-500 mb-2">Votre identifiant AquaToken</p>
+            <p className="text-4xl font-black text-[#005d90] tracking-widest font-mono">
+              {registeredAquaId}
+            </p>
+            <p className="text-xs text-gray-400 mt-3 leading-relaxed">
+              Notez cet identifiant — il vous permet d'échanger des tokens avec vos partenaires
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-full py-3.5 rounded-full text-white font-bold text-sm transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}
+          >
+            Accéder au tableau de bord →
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -102,23 +143,65 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Wallet address */}
+
+          {/* Register-only: Prénom + Nom */}
+          {mode === "register" && (
+            <>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
+                  person
+                </span>
+                <input
+                  type="text"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  placeholder="Votre prénom"
+                  required
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80
+                             text-sm focus:outline-none focus:ring-2 focus:ring-[#0077b6] focus:border-transparent
+                             disabled:opacity-50"
+                />
+              </div>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
+                  badge
+                </span>
+                <input
+                  type="text"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  placeholder="Votre nom de famille"
+                  required
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80
+                             text-sm focus:outline-none focus:ring-2 focus:ring-[#0077b6] focus:border-transparent
+                             disabled:opacity-50"
+                />
+              </div>
+            </>
+          )}
+
+          {/* GSM (login + register) */}
           <div className="relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
-              account_balance_wallet
+              phone
             </span>
             <input
-              type="text"
-              value={wallet}
-              onChange={(e) => setWallet(e.target.value)}
-              placeholder="0x1234...abcd"
+              type="tel"
+              value={gsm}
+              onChange={(e) => setGsm(e.target.value)}
+              placeholder={mode === "login" ? "Votre numéro GSM" : "Ex: 25123456"}
               required
               disabled={loading}
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80
                          text-sm focus:outline-none focus:ring-2 focus:ring-[#0077b6] focus:border-transparent
-                         disabled:opacity-50 font-mono"
+                         disabled:opacity-50"
             />
           </div>
+          {mode === "register" && (
+            <p className="text-xs text-gray-400 -mt-2 pl-2">Numéro tunisien 8 chiffres</p>
+          )}
 
           {/* Password */}
           <div className="relative">
@@ -138,10 +221,9 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Register-only fields */}
+          {/* Register-only: Type + Localisation */}
           {mode === "register" && (
             <>
-              {/* User type pill buttons */}
               <div>
                 <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
                   Type de compte
@@ -165,7 +247,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Localisation */}
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
                   location_on
@@ -192,7 +273,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Submit button */}
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -208,7 +289,7 @@ export default function LoginPage() {
                   <path className="opacity-75" fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
-                Connexion en cours...
+                {mode === "login" ? "Connexion en cours..." : "Création en cours..."}
               </>
             ) : (
               mode === "login" ? "Connexion →" : "Créer mon compte →"
@@ -220,8 +301,8 @@ export default function LoginPage() {
         <div className="flex justify-center gap-6 mt-8 pt-6 border-t border-gray-100">
           {[
             { icon: "encrypted", label: "Chiffré" },
-            { icon: "hub", label: "Web3 Native" },
-            { icon: "lan", label: "Décentralisé" },
+            { icon: "eco", label: "Agricole" },
+            { icon: "verified", label: "Sécurisé" },
           ].map(({ icon, label }) => (
             <div key={icon} className="flex flex-col items-center gap-1">
               <span className="material-symbols-outlined text-[#0077b6] text-xl">{icon}</span>
