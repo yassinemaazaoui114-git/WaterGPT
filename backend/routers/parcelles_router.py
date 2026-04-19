@@ -54,7 +54,7 @@ async def get_parcelles(
     )
     parcelles = result.scalars().all()
 
-    print(f"[PARCELLES] {len(parcelles)} parcelle(s) récupérée(s) pour {current_user.wallet_address}")
+    print(f"[PARCELLES] {len(parcelles)} parcelle(s) récupérée(s) pour {current_user.aqua_id}")
 
     return [
         ParcelleResponse(
