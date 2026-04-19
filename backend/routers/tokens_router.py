@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from datetime import datetime
 import uuid
 
-from database import get_db, User, TokenTransaction
+from database import get_db, User, TokenTransaction, TransactionType
 from auth import get_current_user
 from services.token_service import (
     calculate_quota,
