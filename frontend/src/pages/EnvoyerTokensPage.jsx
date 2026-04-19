@@ -394,11 +394,6 @@ export default function EnvoyerTokensPage() {
                   {" "}(#{transferResult?.receiver_code})
                 </p>
 
-                <div className="bg-[#f2f4f6] rounded-2xl p-4 mb-6 text-left">
-                  <div className="text-xs text-gray-400 font-bold uppercase mb-1">Hash de transaction</div>
-                  <div className="font-mono text-xs text-[#005d90] break-all">{transferResult?.tx_hash}</div>
-                </div>
-
                 <div className="rounded-2xl p-4 text-white mb-6"
                      style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
                   <div className="text-xs opacity-70">Nouveau solde</div>
