@@ -4,10 +4,9 @@ from sqlalchemy import select
 from pydantic import BaseModel
 from typing import Optional
 import uuid
-import re
 
 from database import get_db, User, UserType
-from auth import hash_password, verify_password, create_access_token, generate_unique_aqua_id
+from auth import hash_password, verify_password, create_access_token
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -16,14 +15,14 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 class RegisterRequest(BaseModel):
     prenom: str
     nom: str
-    gsm: str
+    user_code: str
     password: str
     type: UserType
     localisation: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
-    gsm: str
+    user_code: str
     password: str
 
 
@@ -31,39 +30,35 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user_id: str
-    aqua_id: str
+    user_code: str
     prenom: str
     nom: str
-    gsm: str
     type: str
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db)):
     try:
-        # Valider format GSM tunisien (8 chiffres)
-        if not re.fullmatch(r"\d{8}", request.gsm):
+        # Valider le format du code : exactement 6 chiffres
+        if not (len(request.user_code) == 6 and request.user_code.isdigit()):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Numéro GSM invalide (8 chiffres requis)",
+                detail="Le code doit contenir exactement 6 chiffres",
             )
 
-        # Vérifier unicité du GSM
-        result = await db.execute(select(User).where(User.gsm == request.gsm))
+        # Vérifier unicité du code
+        result = await db.execute(select(User).where(User.user_code == request.user_code))
         if result.scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ce numéro GSM est déjà enregistré",
+                detail="Ce code est déjà utilisé. Choisissez un autre.",
             )
-
-        aqua_id = await generate_unique_aqua_id(db)
 
         new_user = User(
             id=uuid.uuid4(),
             prenom=request.prenom,
             nom=request.nom,
-            gsm=request.gsm,
-            aqua_id=aqua_id,
+            user_code=request.user_code,
             password_hash=hash_password(request.password),
             type=request.type,
             localisation=request.localisation,
@@ -73,17 +68,16 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
         await db.commit()
         await db.refresh(new_user)
 
-        token = create_access_token({"sub": new_user.gsm})
+        token = create_access_token({"sub": new_user.user_code})
 
-        print(f"[AUTH] Nouvel utilisateur: {request.prenom} {request.nom} | GSM: {request.gsm} | AQ-ID: {aqua_id}")
+        print(f"[AUTH] Nouvel utilisateur: {request.prenom} {request.nom} | Code: {request.user_code}")
 
         return AuthResponse(
             access_token=token,
             user_id=str(new_user.id),
-            aqua_id=new_user.aqua_id,
+            user_code=new_user.user_code,
             prenom=new_user.prenom,
             nom=new_user.nom,
-            gsm=new_user.gsm,
             type=new_user.type.value,
         )
 
@@ -100,13 +94,13 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
 @router.post("/login", response_model=AuthResponse)
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     try:
-        result = await db.execute(select(User).where(User.gsm == request.gsm))
+        result = await db.execute(select(User).where(User.user_code == request.user_code))
         user = result.scalar_one_or_none()
 
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Numéro GSM non trouvé",
+                detail="Code utilisateur non trouvé",
             )
 
         if not verify_password(request.password, user.password_hash):
@@ -115,17 +109,16 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
                 detail="Mot de passe incorrect",
             )
 
-        token = create_access_token({"sub": user.gsm})
+        token = create_access_token({"sub": user.user_code})
 
-        print(f"[AUTH] Connexion: {user.prenom} {user.nom} ({user.aqua_id})")
+        print(f"[AUTH] Connexion: {user.prenom} {user.nom} ({user.user_code})")
 
         return AuthResponse(
             access_token=token,
             user_id=str(user.id),
-            aqua_id=user.aqua_id,
+            user_code=user.user_code,
             prenom=user.prenom,
             nom=user.nom,
-            gsm=user.gsm,
             type=user.type.value,
         )
 

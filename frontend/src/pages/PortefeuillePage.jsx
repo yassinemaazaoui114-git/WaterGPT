@@ -128,9 +128,11 @@ export default function PortefeuillePage() {
         </nav>
         <div className="px-6 pb-8 pt-4 border-t border-slate-200/30">
           <div className="px-4 mb-3">
-            <div className="text-xs text-gray-400 font-bold uppercase mb-1">Identifiant</div>
-            <div className="text-sm font-black text-[#005d90] font-mono">{user?.aqua_id}</div>
-            <div className="text-xs text-gray-500">{user?.prenom} {user?.nom}</div>
+            <div className="text-sm font-bold text-[#191c1e]">{user?.prenom} {user?.nom}</div>
+            <div className="text-xl font-black text-[#005d90] font-mono tracking-widest mt-1">
+              #{user?.user_code}
+            </div>
+            <div className="text-xs text-gray-400 capitalize mt-1">{user?.type}</div>
           </div>
           <button onClick={handleLogout}
             className="w-full flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors font-medium">

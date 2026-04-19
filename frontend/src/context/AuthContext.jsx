@@ -16,37 +16,35 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = async (gsm, password) => {
-    const response = await API.post("/auth/login", { gsm, password })
+  const login = async (user_code, password) => {
+    const response = await API.post("/auth/login", { user_code, password })
     const data = response.data
     localStorage.setItem("aquatoken_jwt", data.access_token)
     localStorage.setItem("aquatoken_user", JSON.stringify({
       id: data.user_id,
-      aqua_id: data.aqua_id,
+      user_code: data.user_code,
       prenom: data.prenom,
       nom: data.nom,
-      gsm: data.gsm,
       type: data.type,
     }))
-    setUser({ id: data.user_id, aqua_id: data.aqua_id, prenom: data.prenom, nom: data.nom, gsm: data.gsm, type: data.type })
+    setUser({ id: data.user_id, user_code: data.user_code, prenom: data.prenom, nom: data.nom, type: data.type })
     return data
   }
 
-  const register = async (prenom, nom, gsm, password, type, localisation) => {
+  const register = async (prenom, nom, user_code, password, type, localisation) => {
     const response = await API.post("/auth/register", {
-      prenom, nom, gsm, password, type, localisation,
+      prenom, nom, user_code, password, type, localisation,
     })
     const data = response.data
     localStorage.setItem("aquatoken_jwt", data.access_token)
     localStorage.setItem("aquatoken_user", JSON.stringify({
       id: data.user_id,
-      aqua_id: data.aqua_id,
+      user_code: data.user_code,
       prenom: data.prenom,
       nom: data.nom,
-      gsm: data.gsm,
       type: data.type,
     }))
-    setUser({ id: data.user_id, aqua_id: data.aqua_id, prenom: data.prenom, nom: data.nom, gsm: data.gsm, type: data.type })
+    setUser({ id: data.user_id, user_code: data.user_code, prenom: data.prenom, nom: data.nom, type: data.type })
     return data
   }
 

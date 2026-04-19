@@ -77,14 +77,13 @@ class TransactionType(str, enum.Enum):
 # ─────────────────────────────────────────
 
 class User(Base):
-    """Compte utilisateur agriculteur identifié par son numéro GSM."""
+    """Compte utilisateur agriculteur identifié par son code personnel à 6 chiffres."""
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     prenom = Column(String(80), nullable=False, default="")
     nom = Column(String(80), nullable=False, default="")
-    gsm = Column(String(20), unique=True, nullable=False, default="")
-    aqua_id = Column(String(10), unique=True, nullable=False, default="")
+    user_code = Column(String(6), unique=True, nullable=False, default="")
     # Mot de passe haché avec bcrypt — jamais stocké en clair
     password_hash = Column(String(255), nullable=False, default="")
     type = Column(Enum(UserType), nullable=False)
@@ -173,9 +172,8 @@ class TokenTransaction(Base):
 # INDEX — Optimisation des requêtes fréquentes
 # ─────────────────────────────────────────
 
-# Recherche rapide d'un utilisateur par GSM (login)
-Index("ix_users_gsm", User.gsm)
-Index("ix_users_aqua_id", User.aqua_id)
+# Recherche rapide d'un utilisateur par code personnel (login)
+Index("ix_users_code", User.user_code)
 
 # Filtrage des parcelles par propriétaire
 Index("ix_parcelles_user", Parcelle.user_id)

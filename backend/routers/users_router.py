@@ -13,10 +13,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 class UserProfile(BaseModel):
     id: str
-    aqua_id: str
+    user_code: str
     prenom: str
     nom: str
-    gsm: str
     type: str
     localisation: Optional[str]
     created_at: str
@@ -32,13 +31,12 @@ class UserStats(BaseModel):
 async def get_my_profile(
     current_user: User = Depends(get_current_user),
 ):
-    print(f"[USERS] Profil récupéré: {current_user.aqua_id}")
+    print(f"[USERS] Profil récupéré: {current_user.user_code}")
     return UserProfile(
         id=str(current_user.id),
-        aqua_id=current_user.aqua_id,
+        user_code=current_user.user_code,
         prenom=current_user.prenom,
         nom=current_user.nom,
-        gsm=current_user.gsm,
         type=current_user.type.value,
         localisation=current_user.localisation,
         created_at=current_user.created_at.isoformat(),
@@ -58,14 +56,13 @@ async def get_my_stats(
     )
     row = result.one()
 
-    print(f"[USERS] Stats récupérées pour: {current_user.aqua_id}")
+    print(f"[USERS] Stats récupérées pour: {current_user.user_code}")
 
     profile = UserProfile(
         id=str(current_user.id),
-        aqua_id=current_user.aqua_id,
+        user_code=current_user.user_code,
         prenom=current_user.prenom,
         nom=current_user.nom,
-        gsm=current_user.gsm,
         type=current_user.type.value,
         localisation=current_user.localisation,
         created_at=current_user.created_at.isoformat(),

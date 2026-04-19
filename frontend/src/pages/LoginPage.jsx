@@ -8,10 +8,11 @@ export default function LoginPage() {
   const [mode, setMode] = useState("login") // "login" | "register"
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [registeredAquaId, setRegisteredAquaId] = useState("")
+  const [registeredCode, setRegisteredCode] = useState("")
+  const [registeredPrenom, setRegisteredPrenom] = useState("")
 
   // Login fields
-  const [gsm, setGsm] = useState("")
+  const [userCode, setUserCode] = useState("")
   const [password, setPassword] = useState("")
 
   // Register-only fields
@@ -38,17 +39,17 @@ export default function LoginPage() {
     setLoading(true)
     try {
       if (mode === "login") {
-        await login(gsm, password)
+        await login(userCode, password)
         navigate("/dashboard")
       } else {
-        const data = await register(prenom, nom, gsm, password, userType, localisation)
-        setRegisteredAquaId(data.aqua_id)
-        // Don't navigate immediately — show the AQ-ID card first
+        const data = await register(prenom, nom, userCode, password, userType, localisation)
+        setRegisteredCode(data.user_code)
+        setRegisteredPrenom(data.prenom)
       }
     } catch (err) {
       const status = err?.response?.status
       const detail = err?.response?.data?.detail
-      if (status === 401) setError("Numéro GSM ou mot de passe incorrect")
+      if (status === 401) setError("Code utilisateur ou mot de passe incorrect")
       else if (status === 400) setError(detail || "Données invalides")
       else setError("Erreur de connexion. Vérifiez le serveur.")
     } finally {
@@ -56,8 +57,8 @@ export default function LoginPage() {
     }
   }
 
-  // After register — show AQ-ID and let user go to dashboard
-  if (registeredAquaId) {
+  // After register — show user_code and let user go to dashboard
+  if (registeredCode) {
     return (
       <div
         className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
@@ -67,15 +68,16 @@ export default function LoginPage() {
              style={{ background: "rgba(255,255,255,0.75)", backdropFilter: "blur(24px)" }}>
           <div className="text-5xl mb-4">💧</div>
           <h2 className="text-2xl font-black text-[#005d90] mb-2">Compte créé !</h2>
-          <p className="text-slate-500 text-sm mb-6">Bienvenue sur AquaToken, {prenom} !</p>
+          <p className="text-slate-500 text-sm mb-6">Bienvenue sur AquaToken, {registeredPrenom} !</p>
 
-          <div className="bg-blue-50 rounded-2xl p-6 mb-6">
-            <p className="text-xs text-gray-500 mb-2">Votre identifiant AquaToken</p>
-            <p className="text-4xl font-black text-[#005d90] tracking-widest font-mono">
-              {registeredAquaId}
+          <div className="bg-blue-50 rounded-2xl p-4 text-center mt-4 mb-6">
+            <p className="text-xs text-gray-500 mb-1">Votre code AquaToken</p>
+            <p className="text-4xl font-black text-[#005d90] tracking-[0.3em] font-mono">
+              {registeredCode}
             </p>
-            <p className="text-xs text-gray-400 mt-3 leading-relaxed">
-              Notez cet identifiant — il vous permet d'échanger des tokens avec vos partenaires
+            <p className="text-xs text-gray-400 mt-2">
+              Mémorisez ce code — il vous permet de vous connecter
+              et d'échanger des tokens
             </p>
           </div>
 
@@ -182,26 +184,34 @@ export default function LoginPage() {
             </>
           )}
 
-          {/* GSM (login + register) */}
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
-              phone
-            </span>
-            <input
-              type="tel"
-              value={gsm}
-              onChange={(e) => setGsm(e.target.value)}
-              placeholder={mode === "login" ? "Votre numéro GSM" : "Ex: 25123456"}
-              required
-              disabled={loading}
-              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80
-                         text-sm focus:outline-none focus:ring-2 focus:ring-[#0077b6] focus:border-transparent
-                         disabled:opacity-50"
-            />
+          {/* Code personnel (login + register) */}
+          <div>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
+                pin
+              </span>
+              <input
+                type="text"
+                value={userCode}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setUserCode(val)
+                }}
+                maxLength={6}
+                placeholder={mode === "login" ? "Votre code à 6 chiffres" : "Ex: 472839"}
+                required
+                disabled={loading}
+                className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80
+                           text-sm focus:outline-none focus:ring-2 focus:ring-[#0077b6] focus:border-transparent
+                           disabled:opacity-50 font-mono tracking-widest"
+              />
+            </div>
+            {mode === "register" && (
+              <p className="text-xs text-gray-400 mt-1 pl-2">
+                Choisissez 6 chiffres — c'est votre identifiant unique
+              </p>
+            )}
           </div>
-          {mode === "register" && (
-            <p className="text-xs text-gray-400 -mt-2 pl-2">Numéro tunisien 8 chiffres</p>
-          )}
 
           {/* Password */}
           <div className="relative">
