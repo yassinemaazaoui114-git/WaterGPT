@@ -8,7 +8,7 @@ export default function DashboardPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  const [stats, setStats] = useState({ total_tokens: 0, total_transactions: 0 })
+  const [stats, setStats] = useState({ total_tokens: 0, total_transactions: 0, total_consommation_litres: 0 })
   const [parcelles, setParcelles] = useState([])
   const [plantesMap, setPlantesMap] = useState({})
   const [firstQuota, setFirstQuota] = useState(null)
@@ -272,20 +272,24 @@ export default function DashboardPage() {
           {/* KPI CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            {/* Card 1 — Water Saved */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm flex flex-col justify-between hover:shadow-xl transition-all duration-500 border border-transparent hover:border-sky-100">
+            {/* Card 1 — Total Consumption */}
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm flex flex-col justify-between hover:shadow-xl transition-all duration-500 border border-transparent hover:border-blue-100">
               <div className="flex justify-between items-start">
-                <div className="p-3 bg-sky-50 rounded-2xl text-sky-600">
+                <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
                   <span className="material-symbols-outlined">water_drop</span>
                 </div>
-                <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">+Actif</span>
+                {stats.total_consommation_litres > 0 ? (
+                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">✓ Suivi actif</span>
+                ) : (
+                  <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">En attente</span>
+                )}
               </div>
               <div className="mt-8">
                 <div className="text-4xl font-black text-slate-900 tracking-tighter">
-                  {(stats.total_tokens * 10).toLocaleString("fr-FR")} L
+                  {stats.total_consommation_litres?.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} L
                 </div>
                 <div className="text-sm font-semibold text-slate-400 uppercase tracking-widest mt-1">
-                  Eau Économisée (Litres)
+                  Consommation Totale (Litres)
                 </div>
               </div>
             </div>

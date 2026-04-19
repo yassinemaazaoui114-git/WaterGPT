@@ -4,7 +4,7 @@ from sqlalchemy import select, func
 from pydantic import BaseModel
 from typing import Optional
 
-from database import get_db, User, TokenTransaction
+from database import get_db, User, TokenTransaction, Consommation, Parcelle
 from auth import get_current_user
 
 
@@ -24,6 +24,7 @@ class UserProfile(BaseModel):
 class UserStats(BaseModel):
     total_tokens: float
     total_transactions: int
+    total_consommation_litres: float
     profile: UserProfile
 
 
@@ -56,6 +57,13 @@ async def get_my_stats(
     )
     row = result.one()
 
+    conso_result = await db.execute(
+        select(func.coalesce(func.sum(Consommation.litres_consommes), 0))
+        .join(Parcelle, Consommation.parcelle_id == Parcelle.id)
+        .where(Parcelle.user_id == current_user.id)
+    )
+    total_consommation = float(conso_result.scalar() or 0)
+
     print(f"[USERS] Stats récupérées pour: {current_user.user_code}")
 
     profile = UserProfile(
@@ -71,5 +79,6 @@ async def get_my_stats(
     return UserStats(
         total_tokens=float(row.total_tokens),
         total_transactions=row.total_transactions,
+        total_consommation_litres=total_consommation,
         profile=profile,
     )
