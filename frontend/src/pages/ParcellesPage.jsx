@@ -40,6 +40,7 @@ export default function ParcellesPage() {
   const [mintSuccess, setMintSuccess] = useState(null)
   const [globalMintSuccess, setGlobalMintSuccess] = useState(null)
   const [showReportMsg, setShowReportMsg] = useState(null)
+  const [addStep, setAddStep] = useState(1)
 
   const activeNav = "quotas"
   const navItems = [
@@ -156,11 +157,12 @@ export default function ParcellesPage() {
       surface_m2: "",
       date_plantation: "",
     })
+    setAddStep(1)
     setShowAddForm(true)
   }
 
   const handleAddParcelle = async (e) => {
-    e.preventDefault()
+    if (e?.preventDefault) e.preventDefault()
     setAddError("")
     if (!addForm.type_plante_id || !addForm.surface_m2) {
       setAddError("Veuillez remplir la culture et la surface.")
@@ -225,12 +227,16 @@ export default function ParcellesPage() {
         annee: currentYear,
       })
       if (res.data.success) {
-        setMintSuccess({ tokens: res.data.tokens_minted, tx_hash: res.data.tx_hash })
         setGlobalMintSuccess({
           tokens: res.data.tokens_minted,
           parcelle_name: getPlanteName(selectedParcelle?.type_plante_id),
         })
         setTokenResult(null)
+        setShowConsoForm(false)
+        try {
+          const quotaRes = await API.get(`/tokens/quota/${parcelleId}`)
+          setParcelleQuotas(prev => ({ ...prev, [parcelleId]: quotaRes.data }))
+        } catch {}
       } else {
         setErrorMsg(res.data.reason || "Impossible de réclamer les tokens")
         setTimeout(() => setErrorMsg(""), 4000)
@@ -262,8 +268,8 @@ export default function ParcellesPage() {
       showToast("Consommation enregistrée ✅", 4000)
       try {
         const quotaRes = await API.get(`/tokens/quota/${selectedParcelle.id}`)
-        console.log("Token API response:", quotaRes.data)
         setTokenResult(quotaRes.data)
+        setParcelleQuotas(prev => ({ ...prev, [selectedParcelle.id]: quotaRes.data }))
       } catch {}
     } catch (err) {
       const detail = err?.response?.data?.detail || ""
@@ -437,7 +443,7 @@ export default function ParcellesPage() {
                   ✅ Ratio d'économie: {tokenResult.ratio?.toFixed(1)}% — Excellent ! Continuez comme ça.
                 </p>
               )}
-              {tokenResult.eligible && !mintSuccess && (
+              {tokenResult.eligible && (
                 <button
                   onClick={() => handleMint(selectedParcelle.id)}
                   disabled={minting}
@@ -456,24 +462,6 @@ export default function ParcellesPage() {
             </div>
           )}
 
-          {/* Mint success card */}
-          {mintSuccess && (
-            <div className="mt-4 bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
-              <div className="text-4xl mb-2">🎉</div>
-              <div className="font-black text-green-700 text-xl mb-1">
-                +{mintSuccess.tokens?.toFixed(2)} tokens reçus !
-              </div>
-              <div className="text-xs text-green-600 font-medium mb-3">
-                Tokens ajoutés à votre solde avec succès
-              </div>
-              <button
-                onClick={() => { setMintSuccess(null); setSelectedParcelle(null); setShowConsoForm(false) }}
-                className="mt-3 text-sm text-green-600 font-bold hover:underline"
-              >
-                Fermer ✓
-              </button>
-            </div>
-          )}
 
           {/* Parcelles grid */}
           {parcelles.length === 0 ? (
@@ -648,99 +636,155 @@ export default function ParcellesPage() {
             </div>
 
             {/* Body — only this scrolls */}
-            <form id="add-parcelle-form" onSubmit={handleAddParcelle} className="flex-1 overflow-y-auto p-6 space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Culture *</label>
-                <select
-                  value={addForm.type_plante_id}
-                  onChange={(e) => setAddForm(f => ({ ...f, type_plante_id: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
-                  required
-                >
-                  <option value="">— Sélectionnez une culture —</option>
-                  {plantes.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nom_commun || p.nom} {p.besoin_eau_m3_ha_jour ? `(${p.besoin_eau_m3_ha_jour} m³/ha/j)` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Surface (m²) *</label>
-                <input
-                  type="number" min="1" step="0.01" placeholder="Ex: 5000"
-                  value={addForm.surface_m2}
-                  onChange={(e) => setAddForm(f => ({ ...f, surface_m2: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Date de plantation <span className="font-normal text-slate-400 normal-case">(optionnel)</span>
-                </label>
-                <input
-                  type="date"
-                  value={addForm.date_plantation}
-                  onChange={(e) => setAddForm(f => ({ ...f, date_plantation: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
-                />
-              </div>
-              {quotaPreview && (
-                <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">💧</span>
-                    <span className="font-bold text-[#005d90] text-sm">Quota mensuel calculé</span>
+            <div className="flex-1 overflow-y-auto p-6">
+              {addStep === 1 ? (
+                <form id="add-parcelle-form" onSubmit={(e) => { e.preventDefault(); if (!addForm.type_plante_id || !addForm.surface_m2) { setAddError("Veuillez remplir la culture et la surface."); return; } setAddError(""); setAddStep(2) }} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Culture *</label>
+                    <select
+                      value={addForm.type_plante_id}
+                      onChange={(e) => setAddForm(f => ({ ...f, type_plante_id: e.target.value }))}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
+                      required
+                    >
+                      <option value="">— Sélectionnez une culture —</option>
+                      {plantes.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.nom_commun || p.nom} {p.besoin_eau_m3_ha_jour ? `(${p.besoin_eau_m3_ha_jour} m³/ha/j)` : ""}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="text-3xl font-black text-[#005d90] mb-1">
-                    {parseInt(quotaPreview.quota).toLocaleString()} L
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Surface (m²) *</label>
+                    <input
+                      type="number" min="1" step="0.01" placeholder="Ex: 5000"
+                      value={addForm.surface_m2}
+                      onChange={(e) => setAddForm(f => ({ ...f, surface_m2: e.target.value }))}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
+                      required
+                    />
                   </div>
-                  <div className="text-xs text-blue-600 font-medium mb-3">
-                    par mois pour {quotaPreview.plante_nom}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Date de plantation <span className="font-normal text-slate-400 normal-case">(optionnel)</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={addForm.date_plantation}
+                      onChange={(e) => setAddForm(f => ({ ...f, date_plantation: e.target.value }))}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
+                    />
                   </div>
-                  <div className="bg-white rounded-xl p-3 space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-400">Besoin journalier</span>
-                      <span className="font-bold">{quotaPreview.besoin} L/m²/jour</span>
+                  {quotaPreview && (
+                    <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">💧</span>
+                        <span className="font-bold text-[#005d90] text-sm">Quota mensuel calculé</span>
+                      </div>
+                      <div className="text-3xl font-black text-[#005d90] mb-1">
+                        {parseInt(quotaPreview.quota).toLocaleString()} L
+                      </div>
+                      <div className="text-xs text-blue-600 font-medium mb-3">
+                        par mois pour {quotaPreview.plante_nom}
+                      </div>
+                      <div className="bg-white rounded-xl p-3 space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Besoin journalier</span>
+                          <span className="font-bold">{quotaPreview.besoin} L/m²/jour</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Facteur saisonnier</span>
+                          <span className="font-bold">×{quotaPreview.facteur}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Jours ce mois</span>
+                          <span className="font-bold">{quotaPreview.jours} jours</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-2 bg-green-50 rounded-xl text-center">
+                        <p className="text-xs text-green-700 font-medium">
+                          🎯 Restez sous <strong>{parseInt(quotaPreview.quota).toLocaleString()} L</strong> ce mois pour gagner des tokens
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-400">Facteur saisonnier</span>
-                      <span className="font-bold">×{quotaPreview.facteur}</span>
+                  )}
+                  {addError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">{addError}</div>}
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center mb-4">
+                    <div className="text-3xl mb-2">✅</div>
+                    <h4 className="font-bold text-[#191c1e]">Vérifiez vos informations</h4>
+                    <p className="text-sm text-gray-400">Ces données ne pourront pas être modifiées ce mois</p>
+                  </div>
+                  <div className="bg-[#f2f4f6] rounded-2xl p-4 space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-sm">Culture</span>
+                      <span className="font-bold">{plantes.find(p => String(p.id) === String(addForm.type_plante_id))?.nom_commun || plantes.find(p => String(p.id) === String(addForm.type_plante_id))?.nom}</span>
                     </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-400">Jours ce mois</span>
-                      <span className="font-bold">{quotaPreview.jours} jours</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-sm">Surface</span>
+                      <span className="font-bold text-[#005d90] text-lg">{addForm.surface_m2} m²</span>
+                    </div>
+                    {addForm.date_plantation && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 text-sm">Date plantation</span>
+                        <span className="font-bold">{addForm.date_plantation}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-gray-200 pt-3">
+                      <span className="text-gray-500 text-sm">Quota mensuel</span>
+                      <span className="font-bold text-green-600">
+                        {quotaPreview ? parseInt(quotaPreview.quota).toLocaleString() + " L" : "..."}
+                      </span>
                     </div>
                   </div>
-                  <div className="mt-3 p-2 bg-green-50 rounded-xl text-center">
-                    <p className="text-xs text-green-700 font-medium">
-                      🎯 Restez sous <strong>{parseInt(quotaPreview.quota).toLocaleString()} L</strong> ce mois pour gagner des tokens
+                  <div className="bg-yellow-50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-yellow-700 font-medium">
+                      ⚠️ Vérifiez bien la surface — elle détermine votre quota mensuel
                     </p>
                   </div>
+                  {addError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">{addError}</div>}
                 </div>
               )}
-              {addError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">{addError}</div>}
-            </form>
+            </div>
 
             {/* Footer — never scrolls */}
             <div className="p-6 pt-4 border-t border-gray-100 flex-shrink-0 flex gap-3">
-              <button type="button" onClick={() => setShowAddForm(false)}
-                className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors">
-                Annuler
-              </button>
-              <button type="submit" form="add-parcelle-form" disabled={addLoading}
-                className="flex-1 py-3 rounded-full text-sm font-bold text-white transition-all disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
-                {addLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                    </svg>
-                    Ajout...
-                  </span>
-                ) : "Ajouter"}
-              </button>
+              {addStep === 1 ? (
+                <>
+                  <button type="button" onClick={() => setShowAddForm(false)}
+                    className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors">
+                    Annuler
+                  </button>
+                  <button type="submit" form="add-parcelle-form"
+                    className="flex-1 py-3 rounded-full text-sm font-bold text-white transition-all"
+                    style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
+                    Continuer →
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={() => setAddStep(1)}
+                    className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors">
+                    ← Modifier
+                  </button>
+                  <button type="button" onClick={handleAddParcelle} disabled={addLoading}
+                    className="flex-1 py-3 rounded-full text-sm font-bold text-white transition-all disabled:opacity-60"
+                    style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
+                    {addLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        Ajout...
+                      </span>
+                    ) : "Confirmer l'ajout"}
+                  </button>
+                </>
+              )}
             </div>
 
           </div>
