@@ -114,6 +114,22 @@ async def add_consommation(
             detail=f"Consommation irréaliste pour cette surface (max {max_litres:.0f} L)",
         )
 
+    # Vérifier si consommation déjà saisie ce mois
+    current_month = date.today().month
+    current_year = date.today().year
+    existing = await db.execute(
+        select(Consommation).where(
+            Consommation.parcelle_id == uuid.UUID(request.parcelle_id),
+            extract("month", Consommation.date) == current_month,
+            extract("year", Consommation.date) == current_year,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Consommation déjà saisie ce mois pour cette parcelle. Si vous avez fait une erreur, utilisez le bouton Signaler un problème.",
+        )
+
     # Créer l'entrée de consommation
     new_conso = Consommation(
         id=uuid.uuid4(),

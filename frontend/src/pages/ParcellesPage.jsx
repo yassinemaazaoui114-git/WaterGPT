@@ -41,6 +41,7 @@ export default function ParcellesPage() {
   const [errorMsg, setErrorMsg] = useState("")
   const [minting, setMinting] = useState(false)
   const [mintSuccess, setMintSuccess] = useState(null)
+  const [globalMintSuccess, setGlobalMintSuccess] = useState(null)
 
   const activeNav = "quotas"
   const navItems = [
@@ -227,6 +228,10 @@ export default function ParcellesPage() {
       })
       if (res.data.success) {
         setMintSuccess({ tokens: res.data.tokens_minted, tx_hash: res.data.tx_hash })
+        setGlobalMintSuccess({
+          tokens: res.data.tokens_minted,
+          parcelle_name: getPlanteName(selectedParcelle?.type_plante_id),
+        })
         setTokenResult(null)
       } else {
         setErrorMsg(res.data.reason || "Impossible de réclamer les tokens")
@@ -263,8 +268,12 @@ export default function ParcellesPage() {
         setTokenResult(quotaRes.data)
       } catch {}
     } catch (err) {
-      const detail = err?.response?.data?.detail
-      setConsoError(detail || "Erreur lors de l'enregistrement.")
+      const detail = err?.response?.data?.detail || ""
+      if (detail.includes("déjà saisie")) {
+        setConsoError("already_submitted")
+      } else {
+        setConsoError(detail || "Erreur lors de l'enregistrement.")
+      }
     } finally {
       setConsoLoading(false)
     }
@@ -357,6 +366,27 @@ export default function ParcellesPage() {
               Nouvelle Parcelle
             </button>
           </div>
+
+          {/* Global mint success banner */}
+          {globalMintSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🪙</span>
+                <div>
+                  <div className="font-bold text-green-700">
+                    +{globalMintSuccess.tokens?.toFixed(2)} tokens ajoutés à votre solde !
+                  </div>
+                  <div className="text-xs text-green-600">
+                    Consultez votre Portefeuille pour voir votre nouveau solde
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setGlobalMintSuccess(null)}
+                className="text-green-400 hover:text-green-600 font-bold text-lg leading-none"
+              >×</button>
+            </div>
+          )}
 
           {/* Token result info card */}
           {tokenResult && (
@@ -557,12 +587,32 @@ export default function ParcellesPage() {
                     </div>
                   )}
 
-                  <button
-                    onClick={() => openConsoModal(parcelle)}
-                    className="mt-auto w-full py-2.5 rounded-full text-xs font-bold border-2 border-[#005d90] text-[#005d90] hover:bg-[#005d90] hover:text-white transition-all duration-200"
-                  >
-                    Saisir Consommation
-                  </button>
+                  {(() => {
+                    const hasConsoThisMonth = parcelleQuotas[parcelle.id]?.reel > 0
+                    return (
+                      <>
+                        <button
+                          onClick={() => { if (!hasConsoThisMonth) openConsoModal(parcelle) }}
+                          className={`mt-auto w-full py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
+                            hasConsoThisMonth
+                              ? "border border-gray-200 text-gray-300 cursor-not-allowed"
+                              : "border-2 border-[#005d90] text-[#005d90] hover:bg-[#005d90] hover:text-white"
+                          }`}
+                        >
+                          {hasConsoThisMonth ? "✓ Consommation saisie" : "Saisir Consommation"}
+                        </button>
+                        {hasConsoThisMonth && (
+                          <a
+                            href={`mailto:support.customer@watergpt.tn?subject=Signalement parcelle ${parcelle.id.slice(0,8)}&body=Bonjour,%0D%0A%0D%0AJe souhaite signaler un problème avec ma parcelle (ID: ${parcelle.id})%0D%0A%0D%0AType de problème:%0D%0A[ ] Erreur dans la saisie de consommation%0D%0A[ ] Bug technique%0D%0A[ ] Autre%0D%0A%0D%0ADescription:%0D%0A%0D%0AMerci,%0D%0A${user?.prenom} ${user?.nom} - Code: ${user?.user_code}`}
+                            className="w-full mt-2 py-2 rounded-full text-xs font-bold text-gray-400 hover:text-red-500 transition-colors flex items-center justify-center gap-1 border border-gray-100 hover:border-red-200"
+                          >
+                            <span className="material-symbols-outlined text-sm">flag</span>
+                            Signaler un problème
+                          </a>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               ))}
             </div>
@@ -734,7 +784,14 @@ export default function ParcellesPage() {
                   ))}
                 </div>
               </div>
-              {consoError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">{consoError}</div>}
+              {consoError === "already_submitted" ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-700">
+                  <div className="font-bold mb-1">⚠️ Consommation déjà saisie</div>
+                  <div className="text-sm">Vous avez déjà saisi votre consommation ce mois pour cette parcelle.</div>
+                </div>
+              ) : consoError ? (
+                <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">❌ {consoError}</div>
+              ) : null}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowConsoForm(false)}
                   className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
