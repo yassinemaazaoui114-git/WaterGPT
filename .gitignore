@@ -8,6 +8,12 @@ backend/.env
 frontend/node_modules/
 frontend/dist/
 
+# Blockchain
+blockchain/.env
+blockchain/node_modules/
+blockchain/artifacts/
+blockchain/cache/
+
 # System
 .DS_Store
 Thumbs.db

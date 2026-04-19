@@ -16,6 +16,7 @@ from routers.consommation_router import router as consommation_router
 from routers.plantes_router import router as plantes_router
 from routers.tokens_router import router as tokens_router
 from database import create_tables
+from services.web3_service import check_connection
 
 
 # ─────────────────────────────────────────
@@ -52,6 +53,13 @@ async def lifespan(app: FastAPI):
             rag_engine.build_index(chunks)
 
         print(f"[MAIN] RAG prêt avec {len(rag_engine.chunks)} chunks")
+
+        # Vérifier connexion blockchain
+        blockchain_ok = check_connection()
+        if blockchain_ok:
+            print("[MAIN] Blockchain Amoy connectée ✅")
+        else:
+            print("[MAIN] Blockchain non connectée (mode local) ⚠️")
 
     except Exception as e:
         print(f"[MAIN] Erreur lors de l'initialisation du RAG : {e}")
@@ -133,6 +141,17 @@ class ChatResponse(BaseModel):
 def health_check():
     """Vérification que l'API est opérationnelle."""
     return {"status": "ok", "message": "WaterGPT API opérationnelle"}
+
+
+@app.get("/blockchain/status")
+async def blockchain_status():
+    """Statut de la connexion à la blockchain Polygon Amoy."""
+    connected = check_connection()
+    return {
+        "connected": connected,
+        "network": "Polygon Amoy Testnet",
+        "contract": os.getenv("CONTRACT_ADDRESS", "Non déployé")
+    }
 
 
 @app.post("/chat", response_model=ChatResponse)
