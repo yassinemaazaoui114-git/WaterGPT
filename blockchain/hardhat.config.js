@@ -6,7 +6,7 @@ const AMOY_RPC_URL = process.env.AMOY_RPC_URL || "https://rpc-amoy.polygon.techn
 
 module.exports = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.28",
     settings: {
       optimizer: {
         enabled: true,

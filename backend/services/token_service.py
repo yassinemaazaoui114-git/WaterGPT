@@ -3,14 +3,17 @@ import hashlib
 import time
 import uuid
 from datetime import datetime, timezone
+from services.notification_service import create_notification
+from database import NotificationType
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, extract
 
 from database import (
     Parcelle, Consommation, ReferentielPlante,
-    TokenTransaction, TransactionType, User,
+    TokenTransaction, TransactionType, NotificationType, User,
 )
+from services.notification_service import create_notification
 
 
 # ─────────────────────────────────────────
@@ -286,6 +289,19 @@ async def mint_tokens(
 
         db.add(transaction)
         await db.commit()
+        await create_notification(
+            db=db,
+            user_id=str(user_id),
+            type=NotificationType.tokens_minted,
+            title="Tokens gagnés 🌱",
+            message=f"Vous avez gagné {token_result['tokens']:.2f} tokens grâce à vos économies d'eau !",
+            data={
+                "tokens": token_result["tokens"],
+                "economie": token_result["economie"],
+                "ratio": token_result["ratio"]
+            }
+        )
+        
         await db.refresh(transaction)
 
         print(f"[TOKEN] Mint enregistré: {token_result['tokens']} AQUA pour user {user_id}")

@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from typing import Optional
 import os
+from routers.notifications_router import router as notifications_router
 
 from pdf_loader import load_and_chunk_pdf
 from rag_engine import RAGEngine
@@ -84,6 +85,7 @@ app.include_router(parcelles_router)
 app.include_router(consommation_router)
 app.include_router(plantes_router)
 app.include_router(tokens_router)
+app.include_router(notifications_router)
 
 app.add_middleware(
     CORSMiddleware,

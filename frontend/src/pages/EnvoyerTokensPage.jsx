@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 import API from "../api/client"
+import NotificationBell from "../components/NotificationBell"
 
 const REASONS = [
   "💧 Échange d'eau",

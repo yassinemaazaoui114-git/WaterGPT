@@ -16,6 +16,8 @@ from services.token_service import (
     mint_tokens,
     generate_fake_tx_hash,
 )
+from services.notification_service import create_notification
+from database import NotificationType
 
 
 # ─────────────────────────────────────────
@@ -283,6 +285,33 @@ async def transfer_tokens(
     )
     db.add(debit)
     db.add(credit)
+
+    await create_notification(
+        db=db,
+        user_id=str(receiver.id),
+        type=NotificationType.transfer_received,
+        title="Tokens reçus 🪙",
+        message=f"{current_user.prenom} {current_user.nom} vous a envoyé {request.amount:.2f} tokens",
+        data={
+            "sender_code": current_user.user_code,
+            "sender_name": f"{current_user.prenom} {current_user.nom}",
+            "amount": request.amount,
+            "reason": request.reason or "Transfert de tokens",
+        },
+    )
+    await create_notification(
+        db=db,
+        user_id=str(current_user.id),
+        type=NotificationType.transfer_sent,
+        title="Tokens envoyés ✅",
+        message=f"Vous avez envoyé {request.amount:.2f} tokens à {receiver.prenom} {receiver.nom}",
+        data={
+            "receiver_code": request.receiver_code,
+            "receiver_name": f"{receiver.prenom} {receiver.nom}",
+            "amount": request.amount,
+        },
+    )
+
     await db.commit()
 
     print(f"[TOKEN] Transfert: {request.amount} tokens de {current_user.user_code} → {request.receiver_code}")

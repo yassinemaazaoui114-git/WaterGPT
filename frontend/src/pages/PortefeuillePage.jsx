@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 import API from "../api/client"
 import WaterGPTWidget from "../components/WaterGPTWidget"
+import NotificationBell from "../components/NotificationBell"
 
 export default function PortefeuillePage() {
   const { user, logout } = useAuth()
@@ -148,9 +149,7 @@ export default function PortefeuillePage() {
                 style={{ background: "rgba(255,255,255,0.60)", backdropFilter: "blur(12px)" }}>
           <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight">Mon Portefeuille</h1>
           <div className="flex gap-1">
-            <button className="hover:bg-slate-100/60 rounded-full p-2 text-slate-500 transition-colors">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
+            <NotificationBell />
             <button className="hover:bg-slate-100/60 rounded-full p-2 text-slate-500 transition-colors">
               <span className="material-symbols-outlined">account_circle</span>
             </button>

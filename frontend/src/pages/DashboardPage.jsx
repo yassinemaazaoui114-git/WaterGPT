@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 import API from "../api/client"
 import WaterGPTWidget from "../components/WaterGPTWidget"
+import NotificationBell from "../components/NotificationBell"
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -247,9 +248,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex gap-1">
-              <button className="hover:bg-slate-100/60 rounded-full p-2 text-slate-500 transition-colors">
-                <span className="material-symbols-outlined">notifications</span>
-              </button>
+              <NotificationBell />
               <button className="hover:bg-slate-100/60 rounded-full p-2 text-slate-500 transition-colors">
                 <span className="material-symbols-outlined">account_circle</span>
               </button>

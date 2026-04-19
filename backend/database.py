@@ -72,6 +72,13 @@ class TransactionType(str, enum.Enum):
     mint = "mint"
 
 
+class NotificationType(str, enum.Enum):
+    transfer_received = "transfer_received"
+    transfer_sent = "transfer_sent"
+    tokens_minted = "tokens_minted"
+    system = "system"
+
+
 # ─────────────────────────────────────────
 # MODÈLES ORM — Schéma de la base de données
 # ─────────────────────────────────────────
@@ -168,6 +175,19 @@ class TokenTransaction(Base):
     )
 
 
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    type = Column(Enum(NotificationType), nullable=False)
+    title = Column(String(200), nullable=False)
+    message = Column(String(500), nullable=False)
+    is_read = Column(Boolean, default=False)
+    data = Column(JSONB, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
 # ─────────────────────────────────────────
 # INDEX — Optimisation des requêtes fréquentes
 # ─────────────────────────────────────────
@@ -180,6 +200,10 @@ Index("ix_parcelles_user", Parcelle.user_id)
 
 # Historique de consommation trié par parcelle + date
 Index("ix_consommation_parcelle_date", Consommation.parcelle_id, Consommation.date)
+
+# Notifications par utilisateur
+Index("ix_notifications_user", Notification.user_id)
+Index("ix_notifications_user_read", Notification.user_id, Notification.is_read)
 
 
 # ─────────────────────────────────────────
