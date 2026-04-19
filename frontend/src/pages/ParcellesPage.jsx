@@ -748,12 +748,11 @@ export default function ParcellesPage() {
 
       {/* CONSUMPTION MODAL */}
       {showConsoForm && selectedParcelle && (
-        <div
-          className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center pt-8 pb-8 overflow-y-auto"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowConsoForm(false) }}
-        >
-          <div className="bg-white rounded-[2rem] p-8 shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl max-h-[85vh] flex flex-col">
+
+            {/* Header — never scrolls */}
+            <div className="p-6 pb-4 border-b border-gray-100 flex-shrink-0 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Saisir Consommation</h2>
                 <p className="text-xs text-slate-400 mt-1">{getPlanteName(selectedParcelle.type_plante_id)} · {selectedParcelle.surface_m2} m²</p>
@@ -762,7 +761,9 @@ export default function ParcellesPage() {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <form onSubmit={handleAddConso} className="space-y-5">
+
+            {/* Body — only this scrolls */}
+            <form id="conso-form" onSubmit={handleAddConso} className="flex-1 overflow-y-auto p-6 space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Date *</label>
                 <input
@@ -809,26 +810,29 @@ export default function ParcellesPage() {
               ) : consoError ? (
                 <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">❌ {consoError}</div>
               ) : null}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowConsoForm(false)}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
-                  Annuler
-                </button>
-                <button type="submit" disabled={consoLoading}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
-                  {consoLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      Enregistrement...
-                    </span>
-                  ) : "Enregistrer"}
-                </button>
-              </div>
             </form>
+
+            {/* Footer — never scrolls */}
+            <div className="p-6 pt-4 border-t border-gray-100 flex-shrink-0 flex gap-3">
+              <button type="button" onClick={() => setShowConsoForm(false)}
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                Annuler
+              </button>
+              <button type="submit" form="conso-form" disabled={consoLoading}
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
+                {consoLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Enregistrement...
+                  </span>
+                ) : "Enregistrer"}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
