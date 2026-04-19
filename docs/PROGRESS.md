@@ -100,7 +100,21 @@
 - [x] Full sidebar navigation wired between all pages
 - [x] Inline success/error toasts (no alert())
 
-### Phase 12 — Integration & Polish
+### Phase 12 — Auth System Overhaul ✅
+- [x] 6-digit numeric user_code replaces GSM + AQ-ID identifiers
+- [x] JWT sub field uses user_code; DB lookup by user_code
+- [x] Login/Register forms updated with digit-only code input
+- [x] All sidebars display #{user_code} in monospace
+
+### Phase 13 — Token Transfer System ✅
+- [x] POST /tokens/transfer endpoint
+- [x] Debit/credit transaction pairs
+- [x] EnvoyerTokensPage with 3-step flow (form → captcha → success)
+- [x] Visual captcha (5-char alphanumeric with rotation)
+- [x] Success/error notifications
+- [x] Marketplace replaced with Send Tokens page
+
+### Phase 14 — Integration & Polish
 - [ ] README.md with full setup instructions
 - [ ] Demo data seeding script
 - [ ] Pitch demo preparation

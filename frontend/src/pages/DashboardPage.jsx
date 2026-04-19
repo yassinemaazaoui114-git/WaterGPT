@@ -131,7 +131,7 @@ export default function DashboardPage() {
   const navItems = [
     { key: "dashboard", icon: "dashboard", label: "Dashboard" },
     { key: "quotas", icon: "opacity", label: "Quotas d'Eau" },
-    { key: "marketplace", icon: "storefront", label: "Marketplace" },
+    { key: "send", icon: "send", label: "Envoyer tokens" },
     { key: "portefeuille", icon: "account_balance_wallet", label: "Portefeuille" },
     { key: "parametres", icon: "settings", label: "Paramètres" },
   ]
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                   setParametresToast(true)
                   setTimeout(() => setParametresToast(false), 3000)
                 } else {
-                  const routes = { dashboard: "/dashboard", quotas: "/parcelles", marketplace: "/marketplace", portefeuille: "/portefeuille" }
+                  const routes = { dashboard: "/dashboard", quotas: "/parcelles", send: "/envoyer", portefeuille: "/portefeuille" }
                   if (routes[item.key]) navigate(routes[item.key])
                 }
               }}
@@ -300,10 +300,11 @@ export default function DashboardPage() {
                     <span className="material-symbols-outlined">account_balance_wallet</span>
                   </div>
                   <button
-                    onClick={handleMint}
-                    className="text-[10px] font-black uppercase tracking-widest bg-white text-[#005d90] px-4 py-2 rounded-full hover:bg-blue-50 transition-all"
+                    onClick={() => navigate("/envoyer")}
+                    className="text-[10px] font-black uppercase tracking-widest bg-white text-[#005d90] px-4 py-2 rounded-full hover:bg-blue-50 transition-all flex items-center gap-1"
                   >
-                    Calculer tokens
+                    <span className="material-symbols-outlined text-sm">send</span>
+                    Envoyer
                   </button>
                 </div>
                 <div className="mt-8 z-10 relative">

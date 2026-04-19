@@ -5,7 +5,7 @@ import LoginPage from "./pages/LoginPage"
 import DashboardPage from "./pages/DashboardPage"
 import ParcellesPage from "./pages/ParcellesPage"
 import PortefeuillePage from "./pages/PortefeuillePage"
-import MarketplacePage from "./pages/MarketplacePage"
+import EnvoyerTokensPage from "./pages/EnvoyerTokensPage"
 
 export default function App() {
   return (
@@ -22,8 +22,8 @@ export default function App() {
           <Route path="/portefeuille" element={
             <ProtectedRoute><PortefeuillePage /></ProtectedRoute>
           } />
-          <Route path="/marketplace" element={
-            <ProtectedRoute><MarketplacePage /></ProtectedRoute>
+          <Route path="/envoyer" element={
+            <ProtectedRoute><EnvoyerTokensPage /></ProtectedRoute>
           } />
         </Routes>
       </AuthProvider>

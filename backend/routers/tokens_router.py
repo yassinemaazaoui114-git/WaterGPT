@@ -13,6 +13,7 @@ from services.token_service import (
     calculate_tokens,
     calculate_trust_score,
     mint_tokens,
+    generate_fake_tx_hash,
 )
 
 
@@ -31,6 +32,11 @@ class MintRequest(BaseModel):
     parcelle_id: str    # UUID de la parcelle pour laquelle minter
     mois: int           # Mois concerné (1-12)
     annee: int          # Année concernée
+
+
+class TransferRequest(BaseModel):
+    receiver_code: str
+    amount: float
 
 
 class TransactionResponse(BaseModel):
@@ -218,3 +224,72 @@ async def get_transactions(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
+
+
+# ─────────────────────────────────────────
+# ROUTE — POST /tokens/transfer
+# ─────────────────────────────────────────
+
+@router.post("/transfer")
+async def transfer_tokens(
+    request: TransferRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not (len(request.receiver_code) == 6 and request.receiver_code.isdigit()):
+        raise HTTPException(status_code=400, detail="Le code destinataire doit contenir exactement 6 chiffres")
+
+    if request.amount <= 0:
+        raise HTTPException(status_code=400, detail="Le montant doit être supérieur à zéro")
+
+    receiver_result = await db.execute(select(User).where(User.user_code == request.receiver_code))
+    receiver = receiver_result.scalar_one_or_none()
+    if not receiver:
+        raise HTTPException(status_code=404, detail=f"Aucun utilisateur avec le code {request.receiver_code}")
+
+    if receiver.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous envoyer des tokens")
+
+    balance_result = await db.execute(
+        select(func.coalesce(func.sum(TokenTransaction.montant_aqua), 0)).where(
+            TokenTransaction.user_id == current_user.id
+        )
+    )
+    balance = float(balance_result.scalar())
+    if balance < request.amount:
+        raise HTTPException(status_code=400, detail=f"Solde insuffisant. Vous avez {balance:.2f} tokens")
+
+    tx_hash = generate_fake_tx_hash(str(current_user.id), request.amount)
+
+    debit = TokenTransaction(
+        user_id=current_user.id,
+        type=TransactionType.mint,
+        montant_aqua=-request.amount,
+        tx_hash=tx_hash,
+        quota_theorique=0,
+        consommation_reelle=0,
+        ratio_economie=0,
+    )
+    credit = TokenTransaction(
+        user_id=receiver.id,
+        type=TransactionType.mint,
+        montant_aqua=request.amount,
+        tx_hash=tx_hash,
+        quota_theorique=0,
+        consommation_reelle=0,
+        ratio_economie=0,
+    )
+    db.add(debit)
+    db.add(credit)
+    await db.commit()
+
+    print(f"[TOKEN] Transfert: {request.amount} tokens de {current_user.user_code} → {request.receiver_code}")
+
+    return {
+        "success": True,
+        "message": f"{request.amount} tokens envoyés à {receiver.prenom} {receiver.nom}",
+        "receiver_name": f"{receiver.prenom} {receiver.nom}",
+        "receiver_code": request.receiver_code,
+        "amount": request.amount,
+        "tx_hash": tx_hash,
+    }

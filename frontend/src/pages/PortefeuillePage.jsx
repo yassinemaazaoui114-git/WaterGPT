@@ -22,7 +22,7 @@ export default function PortefeuillePage() {
   const navItems = [
     { key: "dashboard", icon: "dashboard", label: "Dashboard" },
     { key: "quotas", icon: "opacity", label: "Quotas d'Eau" },
-    { key: "marketplace", icon: "storefront", label: "Marketplace" },
+    { key: "send", icon: "send", label: "Envoyer tokens" },
     { key: "portefeuille", icon: "account_balance_wallet", label: "Portefeuille" },
     { key: "parametres", icon: "settings", label: "Paramètres" },
   ]
@@ -63,7 +63,7 @@ export default function PortefeuillePage() {
   const handleNavClick = (key) => {
     if (key === "parametres") showToast("⚙️ Paramètres bientôt disponibles.")
     else {
-      const routes = { dashboard: "/dashboard", quotas: "/parcelles", marketplace: "/marketplace", portefeuille: "/portefeuille" }
+      const routes = { dashboard: "/dashboard", quotas: "/parcelles", send: "/envoyer", portefeuille: "/portefeuille" }
       if (routes[key]) navigate(routes[key])
     }
   }
