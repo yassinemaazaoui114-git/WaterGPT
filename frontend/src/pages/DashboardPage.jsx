@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeNav, setActiveNav] = useState("dashboard")
   const [period, setPeriod] = useState("30")
+  const [filteredStats, setFilteredStats] = useState(null)
 
   // Mint notification
   const [mintMsg, setMintMsg] = useState("")
@@ -68,6 +69,18 @@ export default function DashboardPage() {
     }
     fetchData()
   }, [])
+
+  useEffect(() => {
+    const fetchPeriodStats = async () => {
+      try {
+        const res = await API.get(`/users/me/stats?period=${period}`)
+        setFilteredStats(res.data)
+      } catch {
+        setFilteredStats(null)
+      }
+    }
+    fetchPeriodStats()
+  }, [period])
 
   const handleLogout = () => {
     logout()
@@ -217,7 +230,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-6">
             <div className="text-right">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                {stats.total_tokens.toFixed(2)} tokens
+                {(filteredStats || stats).total_tokens.toFixed(2)} tokens
               </div>
               <div className="text-xs font-medium text-sky-600">
                 <span className="font-bold text-[#005d90]">{user?.prenom} {user?.nom}</span>
@@ -278,7 +291,7 @@ export default function DashboardPage() {
                 <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
                   <span className="material-symbols-outlined">water_drop</span>
                 </div>
-                {stats.total_consommation_litres > 0 ? (
+                {(filteredStats || stats).total_consommation_litres > 0 ? (
                   <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">✓ Suivi actif</span>
                 ) : (
                   <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">En attente</span>
@@ -286,7 +299,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-8">
                 <div className="text-4xl font-black text-slate-900 tracking-tighter">
-                  {stats.total_consommation_litres?.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} L
+                  {(filteredStats || stats).total_consommation_litres?.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} L
                 </div>
                 <div className="text-sm font-semibold text-slate-400 uppercase tracking-widest mt-1">
                   Consommation Totale (Litres)
@@ -313,7 +326,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="mt-8 z-10 relative">
                   <div className="text-4xl font-black tracking-tighter">
-                    {stats.total_tokens.toFixed(2)}
+                    {(filteredStats || stats).total_tokens.toFixed(2)}
                   </div>
                   <div className="text-sm font-semibold opacity-70 uppercase tracking-widest mt-1">
                     Solde tokens
@@ -335,14 +348,14 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="mt-8">
-                <div className="text-4xl font-black tracking-tighter" style={{ color: stats.total_tokens > 0 ? "#22c55e" : "#94a3b8" }}>
-                  {stats.total_tokens > 0 ? "Bon" : "En attente"}
+                <div className="text-4xl font-black tracking-tighter" style={{ color: (filteredStats || stats).total_tokens > 0 ? "#22c55e" : "#94a3b8" }}>
+                  {(filteredStats || stats).total_tokens > 0 ? "Bon" : "En attente"}
                 </div>
                 <div className="text-sm font-semibold text-slate-400 uppercase tracking-widest mt-1">
                   Efficacité
                 </div>
                 <div className="mt-3">
-                  {stats.total_tokens > 0 ? (
+                  {(filteredStats || stats).total_tokens > 0 ? (
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">✅ Actif</span>
                   ) : (
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">⏳ En attente</span>
@@ -386,11 +399,15 @@ export default function DashboardPage() {
                     </linearGradient>
                   </defs>
                   <path
-                    d="M0,180 Q100,140 200,160 T400,100 T600,120 T800,40 L800,200 L0,200 Z"
+                    d={period === "7"
+                      ? "M0,160 Q100,140 200,150 T400,130 T600,140 T800,120 L800,200 L0,200 Z"
+                      : "M0,180 Q100,140 200,160 T400,100 T600,120 T800,40 L800,200 L0,200 Z"}
                     fill="url(#areaGradient)"
                   />
                   <path
-                    d="M0,180 Q100,140 200,160 T400,100 T600,120 T800,40"
+                    d={period === "7"
+                      ? "M0,160 Q100,140 200,150 T400,130 T600,140 T800,120"
+                      : "M0,180 Q100,140 200,160 T400,100 T600,120 T800,40"}
                     fill="none"
                     stroke="#005d90"
                     strokeWidth="4"
@@ -404,11 +421,23 @@ export default function DashboardPage() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex justify-between items-end text-[10px] font-bold text-slate-400 uppercase pb-2">
-                  <span>Jour 01</span>
-                  <span>Jour 07</span>
-                  <span>Jour 14</span>
-                  <span>Jour 21</span>
-                  <span>Jour 30</span>
+                  {period === "7" ? (
+                    <>
+                      <span>Jour 01</span>
+                      <span>Jour 02</span>
+                      <span>Jour 03</span>
+                      <span>Jour 05</span>
+                      <span>Jour 07</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Jour 01</span>
+                      <span>Jour 07</span>
+                      <span>Jour 14</span>
+                      <span>Jour 21</span>
+                      <span>Jour 30</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -445,111 +474,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* BOTTOM ROW */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-            {/* Parcelles Ledger */}
-            <div className="xl:col-span-2 bg-white rounded-[2rem] shadow-sm overflow-hidden flex flex-col">
-              <div className="p-8 pb-4 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Mes Parcelles</h3>
-                <button
-                  onClick={openAddModal}
-                  className="text-xs font-bold text-white bg-[#005d90] hover:bg-[#004a73] px-4 py-2 rounded-full transition-colors"
-                >
-                  Ajouter +
-                </button>
-              </div>
-
-              {parcelles.length === 0 ? (
-                <div className="p-12 text-center text-slate-400">
-                  <div className="text-4xl">🌱</div>
-                  <p className="mt-2 font-medium">Aucune parcelle enregistrée</p>
-                  <p className="text-sm">Ajoutez votre première parcelle pour commencer</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-[#f2f4f6]/50">
-                      <tr>
-                        {["ID", "Culture", "Surface", "Statut"].map((h) => (
-                          <th key={h} className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {parcelles.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-8 py-4 font-mono text-xs text-sky-700">
-                            AQ-{String(p.id).slice(0, 4).toUpperCase()}
-                          </td>
-                          <td className="px-8 py-4 text-sm font-medium text-slate-700">
-                            {p.type_plante_id ? `Plante #${p.type_plante_id}` : "—"}
-                          </td>
-                          <td className="px-8 py-4 text-sm font-bold text-slate-900">
-                            {p.surface_m2} m²
-                          </td>
-                          <td className="px-8 py-4">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                              p.actif
-                                ? "bg-green-100 text-green-700"
-                                : "bg-slate-100 text-slate-500"
-                            }`}>
-                              {p.actif ? "Actif" : "Inactif"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Marketplace Preview */}
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm flex flex-col">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-slate-900">Marketplace</h3>
-                <div className="flex gap-2">
-                  <button className="p-1.5 rounded-full bg-[#f2f4f6] text-slate-400 hover:text-slate-600 transition-colors">
-                    <span className="material-symbols-outlined text-sm">chevron_left</span>
-                  </button>
-                  <button className="p-1.5 rounded-full bg-[#f2f4f6] text-slate-400 hover:text-slate-600 transition-colors">
-                    <span className="material-symbols-outlined text-sm">chevron_right</span>
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="group cursor-pointer">
-                  <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-3 flex items-center justify-center"
-                       style={{ background: "linear-gradient(135deg, #60a5fa, #06b6d4)" }}>
-                    <span className="text-4xl">💧</span>
-                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-black text-[#005d90]">
-                      2 400 tokens
-                    </div>
-                  </div>
-                  <h4 className="font-bold text-slate-900 group-hover:text-[#005d90] transition-colors text-sm">
-                    Kit Irrigation Goutte-à-Goutte
-                  </h4>
-                  <p className="text-xs font-medium text-slate-400">Économisez jusqu'à 50% d'eau</p>
-                </div>
-                <div className="group cursor-pointer">
-                  <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-3 flex items-center justify-center"
-                       style={{ background: "linear-gradient(135deg, #4ade80, #10b981)" }}>
-                    <span className="text-4xl">🌿</span>
-                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-black text-[#2c694e]">
-                      1 100 tokens
-                    </div>
-                  </div>
-                  <h4 className="font-bold text-slate-900 group-hover:text-[#2c694e] transition-colors text-sm">
-                    Bundle Semences Résistantes
-                  </h4>
-                  <p className="text-xs font-medium text-slate-400">Variétés adaptées au climat tunisien</p>
-                </div>
-              </div>
-            </div>
-          </div>
 
         </main>
       </div>

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime, timedelta
 
 from database import get_db, User, TokenTransaction, Consommation, Parcelle
 from auth import get_current_user
@@ -48,19 +49,28 @@ async def get_my_profile(
 async def get_my_stats(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    period: int = Query(default=30, ge=7, le=30),
 ):
+    cutoff_date = datetime.now() - timedelta(days=period)
+
     result = await db.execute(
         select(
             func.coalesce(func.sum(TokenTransaction.montant_aqua), 0).label("total_tokens"),
             func.count(TokenTransaction.id).label("total_transactions"),
-        ).where(TokenTransaction.user_id == current_user.id)
+        ).where(
+            TokenTransaction.user_id == current_user.id,
+            TokenTransaction.created_at >= cutoff_date,
+        )
     )
     row = result.one()
 
     conso_result = await db.execute(
         select(func.coalesce(func.sum(Consommation.litres_consommes), 0))
         .join(Parcelle, Consommation.parcelle_id == Parcelle.id)
-        .where(Parcelle.user_id == current_user.id)
+        .where(
+            Parcelle.user_id == current_user.id,
+            Consommation.date >= cutoff_date.date(),
+        )
     )
     total_consommation = float(conso_result.scalar() or 0)
 
