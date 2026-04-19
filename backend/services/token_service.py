@@ -1,4 +1,6 @@
 import calendar
+import hashlib
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -9,6 +11,20 @@ from database import (
     Parcelle, Consommation, ReferentielPlante,
     TokenTransaction, TransactionType, User,
 )
+
+
+# ─────────────────────────────────────────
+# HELPER — Génération d'un hash de transaction réaliste
+# ─────────────────────────────────────────
+
+def generate_fake_tx_hash(user_id: str, tokens: float) -> str:
+    """
+    Génère un hash de transaction réaliste pour la démo
+    Format identique aux vrais hash Ethereum/Polygon
+    """
+    raw = f"{user_id}{tokens}{time.time()}{uuid.uuid4()}"
+    hash_bytes = hashlib.sha256(raw.encode()).hexdigest()
+    return f"0x{hash_bytes}"
 
 
 # ─────────────────────────────────────────
@@ -255,8 +271,7 @@ async def mint_tokens(
         trust_score = await calculate_trust_score(user_id, db)
 
         # ── Étape 5 : Enregistrement de la transaction de mint ──
-        # tx_hash local en attendant l'intégration Polygon (Phase 10)
-        tx_hash = f"local_{uuid.uuid4().hex[:16]}"
+        tx_hash = generate_fake_tx_hash(user_id, token_result["tokens"])
 
         transaction = TokenTransaction(
             id=uuid.uuid4(),
@@ -284,6 +299,8 @@ async def mint_tokens(
             "ratio": token_result["ratio"],
             "trust_score": trust_score,
             "tx_hash": transaction.tx_hash,
+            "polygonscan_url": f"https://amoy.polygonscan.com/tx/{transaction.tx_hash}",
+            "blockchain": "Polygon Amoy (Simulation)",
         }
 
     except Exception as e:

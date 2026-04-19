@@ -10,6 +10,7 @@ export default function PortefeuillePage() {
 
   const [balance, setBalance] = useState({ balance: 0, transactions: 0 })
   const [trustScore, setTrustScore] = useState(0.5)
+  const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState("")
 
@@ -40,12 +41,14 @@ export default function PortefeuillePage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [balanceRes, trustRes] = await Promise.all([
+        const [balanceRes, trustRes, txRes] = await Promise.all([
           API.get("/tokens/balance"),
           API.get("/tokens/trust-score"),
+          API.get("/tokens/transactions"),
         ])
         setBalance(balanceRes.data)
         setTrustScore(trustRes.data.trust_score ?? 0.5)
+        setTransactions(txRes.data || [])
       } catch {}
       finally { setLoading(false) }
     }
@@ -279,15 +282,44 @@ export default function PortefeuillePage() {
           {/* TRANSACTION HISTORY */}
           <div className="bg-white p-8 rounded-[2rem] shadow-sm">
             <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-6">Historique des Transactions</h3>
-            {(balance.transactions ?? 0) === 0 ? (
+            {transactions.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-4xl mb-3">📋</div>
                 <p className="text-slate-500 font-medium">Aucune transaction.</p>
                 <p className="text-sm text-slate-400 mt-1">Commencez par saisir votre consommation d'eau pour générer des tokens.</p>
               </div>
             ) : (
-              <div className="p-4 rounded-2xl bg-[#f7f9fb] text-sm text-slate-500 font-medium text-center">
-                {balance.transactions} transaction(s) enregistrée(s). Détail disponible prochainement.
+              <div className="space-y-3">
+                {transactions.map((tx, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 bg-[#f7f9fb] rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-lg">
+                        🪙
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900">
+                          +{parseFloat(tx.montant_aqua).toFixed(2)} tokens
+                        </div>
+                        <div className="text-xs text-slate-400 font-mono">
+                          {tx.tx_hash?.slice(0, 18)}...
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-slate-400">
+                        {new Date(tx.created_at).toLocaleDateString('fr-FR')}
+                      </div>
+                      <a
+                        href={`https://amoy.polygonscan.com/tx/${tx.tx_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#005d90] hover:underline font-medium"
+                      >
+                        Voir ⟶
+                      </a>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

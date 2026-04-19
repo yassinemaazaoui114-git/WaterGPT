@@ -33,6 +33,16 @@ class MintRequest(BaseModel):
     annee: int          # Année concernée
 
 
+class TransactionResponse(BaseModel):
+    id: str
+    montant_aqua: float
+    tx_hash: str
+    quota_theorique: float
+    consommation_reelle: float
+    ratio_economie: float
+    created_at: str
+
+
 # ─────────────────────────────────────────
 # ROUTE — GET /tokens/quota/{parcelle_id}
 # ─────────────────────────────────────────
@@ -161,6 +171,49 @@ async def get_trust_score(
 
     except Exception as e:
         print(f"[TOKEN] Erreur dans GET /trust-score: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+
+
+# ─────────────────────────────────────────
+# ROUTE — GET /tokens/transactions
+# ─────────────────────────────────────────
+
+@router.get("/transactions", response_model=list[TransactionResponse])
+async def get_transactions(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retourne les 20 dernières transactions de tokens pour l'utilisateur authentifié.
+    Ordonnées par date décroissante.
+    """
+    try:
+        result = await db.execute(
+            select(TokenTransaction)
+            .where(TokenTransaction.user_id == current_user.id)
+            .order_by(TokenTransaction.created_at.desc())
+            .limit(20)
+        )
+        transactions = result.scalars().all()
+
+        return [
+            TransactionResponse(
+                id=str(tx.id),
+                montant_aqua=float(tx.montant_aqua or 0),
+                tx_hash=tx.tx_hash or "",
+                quota_theorique=float(tx.quota_theorique or 0),
+                consommation_reelle=float(tx.consommation_reelle or 0),
+                ratio_economie=float(tx.ratio_economie or 0),
+                created_at=tx.created_at.isoformat() if tx.created_at else "",
+            )
+            for tx in transactions
+        ]
+
+    except Exception as e:
+        print(f"[TOKEN] Erreur dans GET /transactions: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),

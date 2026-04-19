@@ -75,16 +75,15 @@
 
 ---
 
-### Phase 10 — Smart Contract ✅
-- [x] AquaToken.sol ERC20 contract (sans dépendance OpenZeppelin)
-- [x] mintWaterReward function avec vérifications de sécurité
-- [x] registerFarmer function (aqua_id → adresse wallet)
-- [x] transferByAquaId function (transfert par AQ-ID)
-- [x] burn function (pour marketplace)
+### Phase 10 — Blockchain (Simulation) ✅
+- [x] Realistic tx_hash generation (SHA256)
+- [x] Transaction history in Portefeuille page
+- [x] Polygonscan links (simulation)
+- [x] GET /tokens/transactions endpoint
+- [x] AquaToken.sol ERC20 contract (prêt pour déploiement)
 - [x] deploy.js script pour Polygon Amoy
-- [x] web3_service.py backend integration (register + mint + balance)
-- [x] /blockchain/status endpoint
 - [x] hardhat.config.js avec réseau Amoy configuré
+- Note: Real blockchain deployment post-pitch
 
 ---
 
