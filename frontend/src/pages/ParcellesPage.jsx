@@ -4,13 +4,10 @@ import { useNavigate } from "react-router-dom"
 import API from "../api/client"
 import WaterGPTWidget from "../components/WaterGPTWidget"
 
-const SAISONS = ["printemps", "été", "automne", "hiver"]
-
-function getSaisonFromMonth() {
-  const m = new Date().getMonth() + 1
-  if (m >= 3 && m <= 5) return "printemps"
-  if (m >= 6 && m <= 8) return "été"
-  if (m >= 9 && m <= 11) return "automne"
+function getSaisonFromMonth(month) {
+  if (month >= 3 && month <= 5) return "printemps"
+  if (month >= 6 && month <= 8) return "été"
+  if (month >= 9 && month <= 11) return "automne"
   return "hiver"
 }
 
@@ -33,7 +30,7 @@ export default function ParcellesPage() {
 
   const [showConsoForm, setShowConsoForm] = useState(false)
   const [selectedParcelle, setSelectedParcelle] = useState(null)
-  const [consoForm, setConsoForm] = useState({ date: new Date().toISOString().split("T")[0], litres_consommes: "", saison: getSaisonFromMonth() })
+  const [consoForm, setConsoForm] = useState({ date: new Date().toISOString().split("T")[0], litres_consommes: "" })
   const [consoError, setConsoError] = useState("")
   const [consoLoading, setConsoLoading] = useState(false)
   const [tokenResult, setTokenResult] = useState(null)
@@ -211,7 +208,7 @@ export default function ParcellesPage() {
   const openConsoModal = (parcelle) => {
     setSelectedParcelle(parcelle)
     setConsoError("")
-    setConsoForm({ date: new Date().toISOString().split("T")[0], litres_consommes: "", saison: getSaisonFromMonth() })
+    setConsoForm({ date: new Date().toISOString().split("T")[0], litres_consommes: "" })
     setTokenResult(null)
     setMintSuccess(null)
     setShowConsoForm(true)
@@ -259,7 +256,7 @@ export default function ParcellesPage() {
         parcelle_id: selectedParcelle.id,
         date: consoForm.date,
         litres_consommes: parseFloat(consoForm.litres_consommes),
-        saison: consoForm.saison,
+        saison: getSaisonFromMonth(new Date().getMonth() + 1),
       })
       setShowConsoForm(false)
       showToast("Consommation enregistrée ✅", 4000)
@@ -639,18 +636,19 @@ export default function ParcellesPage() {
 
       {/* ADD PARCELLE MODAL */}
       {showAddForm && (
-        <div
-          className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowAddForm(false) }}
-        >
-          <div className="mt-24 bg-white rounded-[2rem] p-8 shadow-xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Ajouter une Parcelle</h2>
-              <button onClick={() => setShowAddForm(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
-                <span className="material-symbols-outlined">close</span>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl max-h-[85vh] flex flex-col">
+
+            {/* Header — never scrolls */}
+            <div className="p-6 pb-4 border-b border-gray-100 flex-shrink-0 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[#191c1e]">Ajouter une Parcelle</h2>
+              <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none">
+                ×
               </button>
             </div>
-            <form onSubmit={handleAddParcelle} className="space-y-5">
+
+            {/* Body — only this scrolls */}
+            <form id="add-parcelle-form" onSubmit={handleAddParcelle} className="flex-1 overflow-y-auto p-6 space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Culture *</label>
                 <select
@@ -722,26 +720,29 @@ export default function ParcellesPage() {
                 </div>
               )}
               {addError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium">{addError}</div>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddForm(false)}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
-                  Annuler
-                </button>
-                <button type="submit" disabled={addLoading}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
-                  {addLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      Ajout...
-                    </span>
-                  ) : "Ajouter"}
-                </button>
-              </div>
             </form>
+
+            {/* Footer — never scrolls */}
+            <div className="p-6 pt-4 border-t border-gray-100 flex-shrink-0 flex gap-3">
+              <button type="button" onClick={() => setShowAddForm(false)}
+                className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors">
+                Annuler
+              </button>
+              <button type="submit" form="add-parcelle-form" disabled={addLoading}
+                className="flex-1 py-3 rounded-full text-sm font-bold text-white transition-all disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #005d90, #0077b6)" }}>
+                {addLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Ajout...
+                  </span>
+                ) : "Ajouter"}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -783,24 +784,6 @@ export default function ParcellesPage() {
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005d90]/30 bg-[#f7f9fb]"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Saison</label>
-                <div className="flex gap-2 flex-wrap">
-                  {SAISONS.map((s) => (
-                    <button
-                      key={s} type="button"
-                      onClick={() => setConsoForm(f => ({ ...f, saison: s }))}
-                      className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition-all ${
-                        consoForm.saison === s
-                          ? "bg-[#005d90] text-white shadow-sm"
-                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
               </div>
               {consoError === "already_submitted" ? (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-700">
