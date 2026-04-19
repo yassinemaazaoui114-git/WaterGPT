@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState("dashboard")
   const [period, setPeriod] = useState("30")
   const [filteredStats, setFilteredStats] = useState(null)
+  const [chartData, setChartData] = useState(null)
 
   // Mint notification
   const [mintMsg, setMintMsg] = useState("")
@@ -61,6 +62,10 @@ export default function DashboardPage() {
             setFirstQuota(quotaRes.data)
           } catch {}
         }
+        try {
+          const chartRes = await API.get(`/users/me/chart-data?period=30`)
+          setChartData(chartRes.data)
+        } catch {}
       } catch {
         // silently fail — state stays at defaults
       } finally {
@@ -78,6 +83,10 @@ export default function DashboardPage() {
       } catch {
         setFilteredStats(null)
       }
+      try {
+        const chartRes = await API.get(`/users/me/chart-data?period=${period}`)
+        setChartData(chartRes.data)
+      } catch {}
     }
     fetchPeriodStats()
   }, [period])
@@ -390,56 +399,62 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="h-64 w-full relative">
-                <svg className="w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#005d90" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#005d90" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d={period === "7"
-                      ? "M0,160 Q100,140 200,150 T400,130 T600,140 T800,120 L800,200 L0,200 Z"
-                      : "M0,180 Q100,140 200,160 T400,100 T600,120 T800,40 L800,200 L0,200 Z"}
-                    fill="url(#areaGradient)"
-                  />
-                  <path
-                    d={period === "7"
-                      ? "M0,160 Q100,140 200,150 T400,130 T600,140 T800,120"
-                      : "M0,180 Q100,140 200,160 T400,100 T600,120 T800,40"}
-                    fill="none"
-                    stroke="#005d90"
-                    strokeWidth="4"
-                  />
-                  <path
-                    d="M0,130 L800,130"
-                    fill="none"
-                    stroke="#e0e3e5"
-                    strokeDasharray="8,8"
-                    strokeWidth="2"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex justify-between items-end text-[10px] font-bold text-slate-400 uppercase pb-2">
-                  {period === "7" ? (
-                    <>
-                      <span>Jour 01</span>
-                      <span>Jour 02</span>
-                      <span>Jour 03</span>
-                      <span>Jour 05</span>
-                      <span>Jour 07</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Jour 01</span>
-                      <span>Jour 07</span>
-                      <span>Jour 14</span>
-                      <span>Jour 21</span>
-                      <span>Jour 30</span>
-                    </>
-                  )}
+              {chartData && chartData.data && chartData.data.some(v => v > 0) ? (
+                <div className="h-64 w-full relative">
+                  <svg className="w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#005d90" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#005d90" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {(() => {
+                      const points = chartData.data
+                      const n = points.length
+                      if (n < 2) return null
+                      const maxVal = chartData.max || 1
+                      const coords = points.map((val, i) => ({
+                        x: (i / (n - 1)) * 800,
+                        y: 200 - (val / maxVal) * 180,
+                      }))
+                      let pathD = `M${coords[0].x},${coords[0].y}`
+                      for (let i = 1; i < coords.length; i++) {
+                        const prev = coords[i - 1]
+                        const curr = coords[i]
+                        const cpX = (prev.x + curr.x) / 2
+                        pathD += ` Q${cpX},${prev.y} ${curr.x},${curr.y}`
+                      }
+                      const areaD = pathD + ` L800,200 L0,200 Z`
+                      return (
+                        <>
+                          <path d={areaD} fill="url(#areaGradient)" />
+                          <path d={pathD} fill="none" stroke="#005d90" strokeWidth="3" strokeLinecap="round" />
+                        </>
+                      )
+                    })()}
+                    <path d="M0,100 L800,100" fill="none" stroke="#e0e3e5" strokeDasharray="8,8" strokeWidth="2" />
+                  </svg>
+                  <div className="absolute inset-0 flex justify-between items-end text-[10px] font-bold text-slate-400 uppercase pb-1 px-1">
+                    {chartData.labels
+                      .filter((_, i) =>
+                        i === 0 ||
+                        i === Math.floor(chartData.labels.length / 4) ||
+                        i === Math.floor(chartData.labels.length / 2) ||
+                        i === Math.floor((3 * chartData.labels.length) / 4) ||
+                        i === chartData.labels.length - 1
+                      )
+                      .map((label, i) => <span key={i}>{label}</span>)}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-gray-400">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">📊</div>
+                    <p className="font-medium">Aucune donnée pour cette période</p>
+                    <p className="text-sm">Saisissez votre consommation pour voir le graphique</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* WaterGPT Insights */}

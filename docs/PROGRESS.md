@@ -114,10 +114,12 @@
 - [x] Success/error notifications
 - [x] Marketplace replaced with Send Tokens page
 
-### Phase 14 — Integration & Polish
-- [ ] README.md with full setup instructions
-- [ ] Demo data seeding script
-- [ ] Pitch demo preparation
+### Phase 14 — Demo Data + Dynamic Chart ✅
+- [x] seed_demo.py with 5 realistic users (Yassine/Ahmed/Fatima/Mohamed/Sarra)
+- [x] 30 days of consumption history + sparse entries for all parcelles
+- [x] GET /users/me/chart-data?period=N endpoint (daily aggregation, fills gaps with 0)
+- [x] Dynamic SVG chart from real DB data (quadratic bezier, empty-state fallback)
+- [x] Transfer reason field with preset pill options + free-text "Autre"
 
 ---
 

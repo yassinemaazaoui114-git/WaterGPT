@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from database import get_db, User, TokenTransaction, Consommation, Parcelle
 from auth import get_current_user
@@ -92,3 +92,50 @@ async def get_my_stats(
         total_consommation_litres=total_consommation,
         profile=profile,
     )
+
+
+@router.get("/me/chart-data")
+async def get_chart_data(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    period: int = Query(default=30, ge=7, le=30),
+):
+    parcelles_result = await db.execute(
+        select(Parcelle.id).where(
+            Parcelle.user_id == current_user.id,
+            Parcelle.actif == True,
+        )
+    )
+    parcelle_ids = [row[0] for row in parcelles_result.fetchall()]
+
+    if not parcelle_ids:
+        return {"data": [], "labels": [], "max": 1}
+
+    cutoff = date.today() - timedelta(days=period)
+
+    result = await db.execute(
+        select(
+            Consommation.date,
+            func.sum(Consommation.litres_consommes).label("total"),
+        )
+        .where(
+            Consommation.parcelle_id.in_(parcelle_ids),
+            Consommation.date >= cutoff,
+        )
+        .group_by(Consommation.date)
+        .order_by(Consommation.date)
+    )
+    rows = result.fetchall()
+
+    date_map = {row.date: float(row.total) for row in rows}
+    labels = []
+    data = []
+    for i in range(period):
+        d = cutoff + timedelta(days=i + 1)
+        labels.append(d.strftime("%d/%m"))
+        data.append(date_map.get(d, 0))
+
+    max_val = max(data) if data and max(data) > 0 else 1
+
+    print(f"[USERS] Chart data: {sum(1 for v in data if v > 0)} jours avec données")
+    return {"labels": labels, "data": data, "max": max_val}

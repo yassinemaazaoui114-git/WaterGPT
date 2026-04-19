@@ -3,6 +3,14 @@ import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 import API from "../api/client"
 
+const REASONS = [
+  "💧 Échange d'eau",
+  "🤝 Remboursement",
+  "🌱 Coopérative agricole",
+  "🎁 Cadeau",
+  "✏️ Autre",
+]
+
 const CAPTCHA_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 const CHAR_COLORS = ["#4ade80", "#60a5fa", "#f59e0b", "#f87171", "#a78bfa"]
 
@@ -21,6 +29,8 @@ export default function EnvoyerTokensPage() {
   const [amount, setAmount] = useState("")
   const [captchaCode, setCaptchaCode] = useState(() => generateCaptcha())
   const [captchaInput, setCaptchaInput] = useState("")
+  const [reason, setReason] = useState("")
+  const [customReason, setCustomReason] = useState("")
   const [loading, setLoading] = useState(false)
   const [pageLoading, setPageLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState("")
@@ -109,6 +119,7 @@ export default function EnvoyerTokensPage() {
       const res = await API.post("/tokens/transfer", {
         receiver_code: receiverCode,
         amount: parseFloat(amount),
+        reason: reason === "✏️ Autre" ? customReason : reason || "Transfert de tokens",
       })
       setTransferResult(res.data)
       setStep(3)
@@ -281,6 +292,39 @@ export default function EnvoyerTokensPage() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Reason */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Motif (optionnel)
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {REASONS.map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => { setReason(r); if (r !== "✏️ Autre") setCustomReason("") }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                          reason === r
+                            ? "bg-[#005d90] text-white"
+                            : "bg-[#f2f4f6] text-gray-600 hover:bg-[#e0e3e5]"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                  {reason === "✏️ Autre" && (
+                    <input
+                      type="text"
+                      value={customReason}
+                      onChange={e => setCustomReason(e.target.value)}
+                      placeholder="Décrivez le motif..."
+                      maxLength={100}
+                      className="w-full bg-[#f2f4f6] rounded-xl py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#005d90]/20"
+                    />
+                  )}
                 </div>
 
                 <button
